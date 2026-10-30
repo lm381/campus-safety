@@ -1,0 +1,2150 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>智安北疆·校园安全隐患多模态智能质检与调度系统</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Chart.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              dark: '#070c18',
+              navy: '#0f172a',
+              panel: '#131e36',
+              cyan: '#00f2fe',
+              blue: '#38bdf8',
+              emerald: '#10b981',
+              warning: '#f59e0b',
+              danger: '#ef4444'
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #070c18; }
+    ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 9999px; }
+    ::-webkit-scrollbar-thumb:hover { background: #334155; }
+
+    /* Laser Scanner Animation */
+    @keyframes scanLine {
+      0% { top: 0%; opacity: 0.8; }
+      50% { opacity: 1; }
+      100% { top: 96%; opacity: 0.8; }
+    }
+    .scanner-line {
+      position: absolute;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, transparent, #00f2fe, #38bdf8, transparent);
+      box-shadow: 0 0 15px #00f2fe, 0 0 30px #38bdf8;
+      animation: scanLine 2s ease-in-out infinite alternate;
+    }
+  </style>
+</head>
+<body class="bg-[#070c18] text-slate-100 min-h-screen flex flex-col font-sans antialiased selection:bg-cyan-500 selection:text-black">
+
+  <!-- ================= GLOBAL TOP NAVIGATION ================= -->
+  <header class="h-16 border-b border-cyan-500/20 bg-slate-900/80 backdrop-blur-md px-4 sm:px-8 flex items-center justify-between sticky top-0 z-40 shadow-lg">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center shadow-[0_0_15px_rgba(0,242,254,0.4)]">
+        <i class="fa-solid fa-shield-halved text-slate-950 text-xl font-black"></i>
+      </div>
+      <div>
+        <div class="flex items-center gap-2">
+          <h1 class="text-base sm:text-lg font-black tracking-wider bg-gradient-to-r from-white via-cyan-200 to-blue-400 bg-clip-text text-transparent">
+            智安北疆
+          </h1>
+          <span class="text-[10px] px-2 py-0.5 rounded-full font-mono bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 hidden sm:inline-block">
+            多模态AI感知调度 v3.9
+          </span>
+        </div>
+        <p class="text-[11px] text-slate-400 hidden md:block">校园安全隐患“随手拍”质检与网格敏捷调度系统</p>
+      </div>
+    </div>
+
+    <!-- Mode Switch Toggle -->
+    <div class="flex items-center gap-2 bg-slate-950/80 p-1.5 rounded-xl border border-slate-700/60 shadow-inner">
+      <button id="btn-nav-mobile" onclick="switchView('mobile')" class="flex items-center gap-2 px-3 sm:px-4 py-1.5 rounded-lg text-xs font-bold transition-all duration-200 bg-gradient-to-r from-cyan-500 to-blue-600 text-slate-950 shadow-md">
+        <i class="fa-solid fa-mobile-screen"></i>
+        <span>师生随手拍</span>
+      </button>
+      <button id="btn-nav-dashboard" onclick="switchView('dashboard')" class="flex items-center gap-2 px-3 sm:px-4 py-1.5 rounded-lg text-xs font-bold text-slate-400 hover:text-white transition-all duration-200 relative">
+        <i class="fa-solid fa-gauge-high"></i>
+        <span>后勤指挥大屏</span>
+        <span id="nav-pending-badge" class="w-2 h-2 rounded-full bg-red-500 animate-pulse absolute top-1 right-1"></span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Global Toast Notifications -->
+  <div id="toast-container" class="fixed top-20 right-4 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+  <!-- ================= MAIN CONTAINER ================= -->
+  <main class="flex-1 w-full max-w-[1600px] mx-auto p-3 sm:p-6 overflow-hidden">
+    
+    <!-- ============================================================== -->
+    <!-- VIEW 1: 师生端·随手拍上报 (Mobile Reporter View)                 -->
+    <!-- ============================================================== -->
+    <section id="view-mobile" class="w-full flex justify-center py-2 sm:py-4 transition-opacity duration-300">
+      
+      <!-- Phone Frame Container -->
+      <div class="w-full max-w-[430px] bg-slate-900 border-4 border-slate-700/80 rounded-[38px] shadow-[0_20px_50px_rgba(0,0,0,0.8),0_0_30px_rgba(6,182,212,0.15)] flex flex-col overflow-hidden relative min-h-[820px]">
+        
+        <!-- Phone Top Status Bar -->
+        <div class="h-6 bg-slate-950 flex items-center justify-between px-6 pt-1 text-[10px] text-slate-400 font-mono">
+          <span id="phone-clock">12:30</span>
+          <div class="w-20 h-4 bg-slate-900 rounded-b-xl -mt-1 flex items-center justify-center">
+            <div class="w-2.5 h-2.5 rounded-full bg-slate-950 border border-slate-800"></div>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <i class="fa-solid fa-signal text-[9px]"></i>
+            <i class="fa-solid fa-wifi text-[9px]"></i>
+            <i class="fa-solid fa-battery-full text-cyan-400"></i>
+          </div>
+        </div>
+
+        <!-- Phone App Sub-Header -->
+        <div class="px-5 py-3 border-b border-slate-800 flex items-center justify-between bg-slate-900/90">
+          <div class="flex items-center gap-2">
+            <div class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></div>
+            <span class="text-xs font-bold text-slate-200">校园网格智能巡检</span>
+          </div>
+          <span class="text-[11px] text-cyan-400 font-mono bg-cyan-950/60 border border-cyan-800/60 px-2 py-0.5 rounded-full">
+            <i class="fa-solid fa-location-dot mr-1"></i>信息实训大楼
+          </span>
+        </div>
+
+        <!-- Mobile Scroll Content -->
+        <div class="flex-1 overflow-y-auto p-4 space-y-4">
+          
+          <!-- Preset Scenarios Selector -->
+          <div>
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-xs font-bold text-slate-300 flex items-center gap-1">
+                <i class="fa-solid fa-wand-magic-sparkles text-cyan-400"></i>典型安全隐患快捷载入
+              </span>
+              <button onclick="openPresetConfigModal()" class="text-[11px] px-2 py-0.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-cyan-400 border border-cyan-500/30 flex items-center gap-1 transition active:scale-95">
+                <i class="fa-solid fa-sliders"></i>
+                <span>自定义预设卡片</span>
+              </button>
+            </div>
+
+            <!-- Dynamic Scenarios Grid Container -->
+            <div id="preset-scenarios-container" class="grid grid-cols-2 gap-2 text-xs">
+              <!-- Dynamically rendered -->
+            </div>
+          </div>
+
+          <!-- Camera Viewport & Dynamic Laser Scanner -->
+          <div class="relative w-full aspect-[4/3] rounded-2xl overflow-hidden bg-slate-950 border-2 border-cyan-500/40 shadow-inner group">
+            
+            <!-- Graphic Display Container -->
+            <div id="image-display-container" class="w-full h-full flex items-center justify-center relative bg-gradient-to-br from-slate-950 via-slate-900 to-cyan-950/30"></div>
+
+            <!-- Dynamic Laser Scanner Line -->
+            <div id="laser-scanner" class="scanner-line hidden"></div>
+
+            <!-- AI Target Detection Bounding Box Overlay -->
+            <div id="bounding-box" class="absolute hidden border-2 border-cyan-400 rounded-md pointer-events-none transition-all duration-300 shadow-[0_0_15px_rgba(0,242,254,0.5)]">
+              <span id="bbox-tag" class="absolute -top-6 left-0 bg-cyan-500 text-slate-950 text-[10px] font-mono font-bold px-1.5 py-0.5 rounded shadow">
+                DETECT: 99.4%
+              </span>
+              <span class="absolute -top-1 -left-1 w-2 h-2 border-t-2 border-l-2 border-white"></span>
+              <span class="absolute -top-1 -right-1 w-2 h-2 border-t-2 border-r-2 border-white"></span>
+              <span class="absolute -bottom-1 -left-1 w-2 h-2 border-b-2 border-l-2 border-white"></span>
+              <span class="absolute -bottom-1 -right-1 w-2 h-2 border-b-2 border-r-2 border-white"></span>
+            </div>
+
+            <!-- Quick Action Floating Buttons -->
+            <div class="absolute bottom-2 right-2 flex gap-1.5 z-10">
+              <label class="cursor-pointer bg-slate-900/90 hover:bg-slate-800 text-cyan-300 border border-cyan-500/40 text-[11px] font-bold px-2.5 py-1.5 rounded-lg flex items-center gap-1 shadow">
+                <i class="fa-solid fa-camera"></i>
+                <span>拍照/相册</span>
+                <input type="file" id="local-file-input" accept="image/*" class="hidden" onchange="handleLocalUpload(event)">
+              </label>
+              <button onclick="triggerAiScan()" id="btn-re-analyze" class="bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 text-[11px] font-black px-3 py-1.5 rounded-lg shadow-md flex items-center gap-1">
+                <i class="fa-solid fa-brain"></i>
+                <span>AI智能重测</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Structured AI Diagnostic Card -->
+          <div id="diagnosis-card" class="bg-slate-800/80 border border-slate-700 rounded-2xl p-3.5 space-y-3 transition-all duration-300">
+            <div class="flex items-center justify-between border-b border-slate-700/60 pb-2">
+              <div class="flex items-center gap-1.5">
+                <i class="fa-solid fa-microchip text-cyan-400"></i>
+                <h3 class="text-xs font-bold text-slate-200">多模态AI质检分析报告</h3>
+              </div>
+              <span id="diag-badge-level" class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-500/20 text-red-400 border border-red-500/40">
+                特急隐患 (S级)
+              </span>
+            </div>
+
+            <!-- Key Metrics Grid -->
+            <div class="grid grid-cols-2 gap-2 text-[11px]">
+              <div class="bg-slate-900/70 p-2 rounded-xl border border-slate-800">
+                <span class="text-slate-400 block text-[10px]">隐患研判类别</span>
+                <span id="diag-category" class="font-bold text-slate-200">用电火灾安全</span>
+              </div>
+              <div class="bg-slate-900/70 p-2 rounded-xl border border-slate-800">
+                <span class="text-slate-400 block text-[10px]">视觉识别置信度</span>
+                <span id="diag-confidence" class="font-bold font-mono text-cyan-400">99.4% (高置信)</span>
+              </div>
+            </div>
+
+            <!-- Description -->
+            <div class="text-[11px] space-y-1">
+              <div class="text-slate-400">现场损坏智能研判：</div>
+              <p id="diag-desc" class="text-slate-200 bg-slate-900/50 p-2 rounded-xl border border-slate-800 leading-relaxed text-[11px]">
+                实训室主配电箱保护套管破损，内部380V动力主线绝缘皮碳化脱落，存在严重电弧打火与触电风险。
+              </p>
+            </div>
+
+            <!-- Maintenance & Dispatch Recommendation -->
+            <div class="bg-cyan-950/30 border border-cyan-800/50 rounded-xl p-2.5 text-[11px] space-y-1.5">
+              <div class="flex items-center justify-between text-cyan-300 font-bold">
+                <span><i class="fa-solid fa-wrench mr-1"></i>维保调度推荐</span>
+                <span id="diag-trade" class="text-white bg-cyan-700/50 px-2 py-0.5 rounded text-[10px]">强电照明组</span>
+              </div>
+              <div class="text-slate-300 text-[10px]">
+                推荐领料清单：<span id="diag-materials" class="text-cyan-200 font-mono">阻燃绝缘套管*2、防漏电断路器*1</span>
+              </div>
+            </div>
+
+            <!-- Location Input -->
+            <div class="space-y-1 text-[11px]">
+              <label class="block text-slate-400 text-[10px]">网格打卡定位 (自动关联)</label>
+              <div class="flex items-center gap-1.5 bg-slate-900/80 px-2.5 py-1.5 rounded-xl border border-slate-700">
+                <i class="fa-solid fa-location-crosshairs text-cyan-400"></i>
+                <input type="text" id="diag-location-input" value="电子信息实验大楼 B座302室" class="bg-transparent text-slate-200 text-xs w-full focus:outline-none">
+              </div>
+            </div>
+
+            <!-- ================= NEW FIELD: 是否着急 (紧急度) ================= -->
+            <div class="space-y-1.5 text-[11px] pt-1 border-t border-slate-700/60">
+              <label class="block text-slate-300 text-[11px] font-bold flex items-center justify-between">
+                <span><i class="fa-solid fa-bell text-amber-400 mr-1"></i>是否着急处理 (紧急诉求)</span>
+                <span id="urgency-tip" class="text-[10px] text-red-400 font-normal">S/A级默认特急响应</span>
+              </label>
+              <div class="grid grid-cols-2 gap-2">
+                <button type="button" id="btn-urgency-yes" onclick="setUrgency(true)" class="py-2 px-3 rounded-xl border text-xs font-bold flex items-center justify-center gap-1.5 transition bg-red-500/20 text-red-400 border-red-500/50 shadow">
+                  <i class="fa-solid fa-fire"></i>
+                  <span>特别着急 (立即抢修)</span>
+                </button>
+                <button type="button" id="btn-urgency-no" onclick="setUrgency(false)" class="py-2 px-3 rounded-xl border text-xs font-bold flex items-center justify-center gap-1.5 transition bg-slate-900/80 text-slate-400 border-slate-700">
+                  <i class="fa-solid fa-clock"></i>
+                  <span>不着急 (可预约时间)</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- ================= NEW FIELD: 维修/清理预约时间 ================= -->
+            <div class="space-y-2 text-[11px] pt-1 border-t border-slate-700/60">
+              <div class="flex items-center justify-between">
+                <label class="text-slate-300 text-[11px] font-bold flex items-center gap-1">
+                  <i class="fa-solid fa-calendar-check text-cyan-400"></i>
+                  <span>维修 / 清理预约时间</span>
+                </label>
+                <div class="flex gap-1">
+                  <button type="button" onclick="setQuickAppointment('now')" class="text-[10px] px-2 py-0.5 rounded bg-slate-900 border border-slate-700 text-cyan-300 hover:border-cyan-500">立即安排</button>
+                  <button type="button" onclick="setQuickAppointment('today_pm')" class="text-[10px] px-2 py-0.5 rounded bg-slate-900 border border-slate-700 text-slate-300 hover:border-cyan-500">今日下午</button>
+                  <button type="button" onclick="setQuickAppointment('tomorrow')" class="text-[10px] px-2 py-0.5 rounded bg-slate-900 border border-slate-700 text-slate-300 hover:border-cyan-500">明日上午</button>
+                </div>
+              </div>
+
+              <!-- Quick Text Input Box (方块自填) -->
+              <div>
+                <input type="text" id="appointment-text-input" placeholder="自定义输入预约时间 (如: 10月31日 下午3点半后、放学后)" class="w-full bg-slate-900/90 px-3 py-1.5 rounded-xl border border-slate-700 text-slate-200 text-xs focus:outline-none focus:border-cyan-400 font-mono">
+              </div>
+
+              <!-- 5-Level Precise Dropdowns (年月日时分 - 00~59完整细化) -->
+              <div class="bg-slate-950/70 p-2.5 rounded-xl border border-slate-800 space-y-1.5">
+                <span class="text-[10px] text-slate-400 block">或通过下拉菜单精细选择具体年月日、时分：</span>
+                <div class="grid grid-cols-5 gap-1.5 font-mono text-xs">
+                  <!-- Year -->
+                  <select id="appoint-year" onchange="syncFromDropdowns()" class="bg-slate-900 border border-slate-700 rounded-lg px-1.5 py-1 text-slate-200 text-center focus:outline-none focus:border-cyan-400">
+                    <option value="2026">2026年</option>
+                    <option value="2027">2027年</option>
+                  </select>
+                  <!-- Month -->
+                  <select id="appoint-month" onchange="syncFromDropdowns()" class="bg-slate-900 border border-slate-700 rounded-lg px-1 py-1 text-slate-200 text-center focus:outline-none focus:border-cyan-400">
+                    <!-- Populated dynamically 1-12 -->
+                  </select>
+                  <!-- Day -->
+                  <select id="appoint-day" onchange="syncFromDropdowns()" class="bg-slate-900 border border-slate-700 rounded-lg px-1 py-1 text-slate-200 text-center focus:outline-none focus:border-cyan-400">
+                    <!-- Populated dynamically 1-31 -->
+                  </select>
+                  <!-- Hour -->
+                  <select id="appoint-hour" onchange="syncFromDropdowns()" class="bg-slate-900 border border-slate-700 rounded-lg px-1 py-1 text-slate-200 text-center focus:outline-none focus:border-cyan-400">
+                    <!-- Populated dynamically 00-23 -->
+                  </select>
+                  <!-- Minute (Full 00~59 range populated via JS) -->
+                  <select id="appoint-minute" onchange="syncFromDropdowns()" class="bg-slate-900 border border-slate-700 rounded-lg px-1 py-1 text-slate-200 text-center focus:outline-none focus:border-cyan-400">
+                    <!-- Populated dynamically 00-59 -->
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <!-- Custom Notes Input -->
+            <div class="space-y-1 pt-1 text-[11px]">
+              <label class="block text-slate-400 text-[10px]">上报人补充特征描述 (选填)</label>
+              <input type="text" id="diag-notes-input" placeholder="可录入异响、焦糊味等特征信息..." class="w-full bg-slate-900/80 px-2.5 py-1.5 rounded-xl border border-slate-700 text-slate-200 text-xs focus:outline-none focus:border-cyan-400">
+            </div>
+
+            <!-- Submit Button -->
+            <button onclick="submitReport()" id="btn-submit-ticket" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 via-blue-500 to-indigo-600 hover:from-cyan-400 hover:to-indigo-500 text-slate-950 font-black text-xs shadow-[0_0_20px_rgba(6,182,212,0.4)] flex items-center justify-center gap-1.5 active:scale-95 transition">
+              <i class="fa-solid fa-paper-plane"></i>
+              <span>一键直报生成工单并同步指挥大屏</span>
+            </button>
+
+          </div>
+
+          <div class="text-center text-[10px] text-slate-500 pb-2">
+            第二届高校师生人工智能应用能力大赛参赛作品 · 智安北疆
+          </div>
+
+        </div>
+
+      </div>
+
+    </section>
+
+    <!-- ============================================================== -->
+    <!-- VIEW 2: 后勤指挥中心·调度大屏 (Command Center & Grid Dispatch) -->
+    <!-- ============================================================== -->
+    <section id="view-dashboard" class="w-full hidden space-y-5 transition-opacity duration-300">
+      
+      <!-- Top Metrics Ribbon -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+        
+        <!-- Active Tickets -->
+        <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 shadow-lg flex flex-col justify-between relative overflow-hidden">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">今日隐患总数</span>
+            <div class="w-8 h-8 rounded-lg bg-cyan-500/10 text-cyan-400 flex items-center justify-center">
+              <i class="fa-solid fa-triangle-exclamation"></i>
+            </div>
+          </div>
+          <div class="my-2 flex items-baseline gap-2">
+            <span id="metric-total-count" class="text-2xl sm:text-3xl font-black font-mono text-white">28</span>
+            <span class="text-[11px] text-emerald-400 font-bold"><i class="fa-solid fa-arrow-up"></i> +4 环比增长</span>
+          </div>
+          <div class="text-[11px] text-slate-500">网格化覆盖率: 100% (24个楼宇)</div>
+          <div class="absolute -right-3 -bottom-3 w-16 h-16 bg-cyan-500/5 rounded-full blur-xl pointer-events-none"></div>
+        </div>
+
+        <!-- S-level Emergencies -->
+        <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 shadow-lg flex flex-col justify-between">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">S级特急风险</span>
+            <div class="w-8 h-8 rounded-lg bg-red-500/10 text-red-400 flex items-center justify-center">
+              <i class="fa-solid fa-fire"></i>
+            </div>
+          </div>
+          <div class="my-2 flex items-baseline gap-2">
+            <span id="metric-s-count" class="text-2xl sm:text-3xl font-black font-mono text-red-400">1</span>
+            <span class="text-[11px] text-red-400 font-bold">需即时排障</span>
+          </div>
+          <div class="text-[11px] text-slate-500">强电断电保护已开启</div>
+        </div>
+
+        <!-- Active Technicians -->
+        <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 shadow-lg flex flex-col justify-between">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">在册在岗维保人员</span>
+            <div class="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center">
+              <i class="fa-solid fa-user-shield"></i>
+            </div>
+          </div>
+          <div class="my-2 flex items-baseline gap-2">
+            <span id="metric-staff-count" class="text-2xl sm:text-3xl font-black font-mono text-emerald-400">12</span>
+            <span class="text-[11px] text-slate-400 font-bold">空闲率: 66%</span>
+          </div>
+          <div class="text-[11px] text-slate-500">支持一键派工直达短信</div>
+        </div>
+
+        <!-- Closed Rate -->
+        <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 shadow-lg flex flex-col justify-between">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">闭环消除率</span>
+            <div class="w-8 h-8 rounded-lg bg-purple-500/10 text-purple-400 flex items-center justify-center">
+              <i class="fa-solid fa-circle-check"></i>
+            </div>
+          </div>
+          <div class="my-2 flex items-baseline gap-2">
+            <span id="metric-closed-rate" class="text-2xl sm:text-3xl font-black font-mono text-purple-400">89.3%</span>
+            <span class="text-[11px] text-slate-400">平均用时: 12.4分</span>
+          </div>
+          <div class="text-[11px] text-slate-500">零重大安全事故天数: 412天</div>
+        </div>
+
+      </div>
+
+      <!-- Action & Roster Toolbar -->
+      <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 flex flex-wrap items-center justify-between gap-3 shadow-lg">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 flex items-center justify-center">
+            <i class="fa-solid fa-network-wired"></i>
+          </div>
+          <div>
+            <h3 class="text-sm font-bold text-slate-200">网格化维保数据调度中心</h3>
+            <p class="text-xs text-slate-400">统一管控强电、消防、水暖管道与塞外冰雪清运人员库</p>
+          </div>
+        </div>
+
+        <!-- Action Button Group -->
+        <div class="flex flex-wrap items-center gap-2">
+          <button onclick="openPersonnelModal()" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-750 text-cyan-300 border border-cyan-500/40 text-xs font-bold flex items-center gap-1.5 transition shadow">
+            <i class="fa-solid fa-users-gear"></i>
+            <span>👥 维保网格人员库管理</span>
+            <span id="btn-roster-count" class="bg-cyan-500/20 text-cyan-400 px-1.5 py-0.2 rounded-full text-[10px] font-mono">12人</span>
+          </button>
+
+          <button onclick="createNewQuickTicket()" class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-xs font-bold flex items-center gap-1.5 transition">
+            <i class="fa-solid fa-plus text-cyan-400"></i>
+            <span>模拟告警</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Charts Data Row -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        
+        <!-- Severity Donut Chart -->
+        <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 shadow-lg flex flex-col justify-between">
+          <div class="flex items-center justify-between mb-2">
+            <h3 class="text-xs font-bold text-slate-300 flex items-center gap-1.5">
+              <i class="fa-solid fa-chart-pie text-cyan-400"></i> 隐患等级动态占比
+            </h3>
+            <span class="text-[10px] text-slate-500 font-mono">实时核算</span>
+          </div>
+          <div class="relative h-44 flex items-center justify-center">
+            <canvas id="chart-severity-pie"></canvas>
+          </div>
+          <div class="grid grid-cols-4 gap-1 text-center text-[10px] pt-2 border-t border-slate-800 font-mono">
+            <div><span class="text-red-400 font-bold">特急</span>: <span id="stat-red">2</span></div>
+            <div><span class="text-amber-400 font-bold">高危</span>: <span id="stat-orange">5</span></div>
+            <div><span class="text-yellow-300 font-bold">中危</span>: <span id="stat-yellow">11</span></div>
+            <div><span class="text-blue-400 font-bold">低危</span>: <span id="stat-blue">10</span></div>
+          </div>
+        </div>
+
+        <!-- Category Bar Chart -->
+        <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 shadow-lg lg:col-span-2 flex flex-col justify-between">
+          <div class="flex items-center justify-between mb-2">
+            <h3 class="text-xs font-bold text-slate-300 flex items-center gap-1.5">
+              <i class="fa-solid fa-chart-simple text-blue-400"></i> 各类安全隐患多模态检出分布
+            </h3>
+            <button onclick="refreshDataState()" class="text-[10px] px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700">
+              <i class="fa-solid fa-rotate mr-1"></i>刷新
+            </button>
+          </div>
+          <div class="relative h-44">
+            <canvas id="chart-category-bar"></canvas>
+          </div>
+          <div class="flex items-center justify-between text-[11px] text-slate-400 pt-2 border-t border-slate-800">
+            <span>重点高发：消防通道占用（38%）与秋冬冰雪路滑（31%）</span>
+            <span class="text-cyan-400 font-bold">AI推算网格人员配比健康</span>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Real-Time Interactive Kanban Board -->
+      <div class="space-y-3">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <h2 class="text-sm font-bold text-slate-200 flex items-center gap-2">
+              <i class="fa-solid fa-list-check text-cyan-400"></i>
+              <span>智慧后勤维保工单流水看板 (Kanban)</span>
+            </h2>
+            <span class="text-xs bg-slate-800 px-2 py-0.5 rounded-full text-slate-400 font-mono">
+              总计 <span id="kanban-total-items">4</span> 项
+            </span>
+          </div>
+        </div>
+
+        <!-- 4-Column Kanban Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-3 sm:gap-4">
+          
+          <!-- Column 1: 待研判 / AI初筛 (Pending) -->
+          <div class="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-3 flex flex-col min-h-[420px]">
+            <div class="flex items-center justify-between pb-2.5 border-b border-slate-800">
+              <div class="flex items-center gap-1.5">
+                <span class="w-2.5 h-2.5 rounded-full bg-red-500"></span>
+                <span class="text-xs font-bold text-slate-200">待研判 / AI初筛</span>
+              </div>
+              <span id="badge-count-pending" class="text-[10px] font-mono bg-red-500/20 text-red-400 px-2 py-0.5 rounded-full font-bold">1</span>
+            </div>
+            <div id="col-pending" class="flex-1 space-y-2.5 pt-3 overflow-y-auto"></div>
+          </div>
+
+          <!-- Column 2: 已调度 / 已派单 (Dispatched) -->
+          <div class="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-3 flex flex-col min-h-[420px]">
+            <div class="flex items-center justify-between pb-2.5 border-b border-slate-800">
+              <div class="flex items-center gap-1.5">
+                <span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+                <span class="text-xs font-bold text-slate-200">已调度 / 已指派</span>
+              </div>
+              <span id="badge-count-dispatched" class="text-[10px] font-mono bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded-full font-bold">1</span>
+            </div>
+            <div id="col-dispatched" class="flex-1 space-y-2.5 pt-3 overflow-y-auto"></div>
+          </div>
+
+          <!-- Column 3: 现场施工 / 抢修中 (Repairing) -->
+          <div class="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-3 flex flex-col min-h-[420px]">
+            <div class="flex items-center justify-between pb-2.5 border-b border-slate-800">
+              <div class="flex items-center gap-1.5">
+                <span class="w-2.5 h-2.5 rounded-full bg-blue-500"></span>
+                <span class="text-xs font-bold text-slate-200">现场处置 / 施工中</span>
+              </div>
+              <span id="badge-count-repairing" class="text-[10px] font-mono bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded-full font-bold">1</span>
+            </div>
+            <div id="col-repairing" class="flex-1 space-y-2.5 pt-3 overflow-y-auto"></div>
+          </div>
+
+          <!-- Column 4: 验收闭环 (Closed) -->
+          <div class="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-3 flex flex-col min-h-[420px]">
+            <div class="flex items-center justify-between pb-2.5 border-b border-slate-800">
+              <div class="flex items-center gap-1.5">
+                <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+                <span class="text-xs font-bold text-slate-200">复查合格 / 已闭环</span>
+              </div>
+              <span id="badge-count-closed" class="text-[10px] font-mono bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full font-bold">1</span>
+            </div>
+            <div id="col-closed" class="flex-1 space-y-2.5 pt-3 overflow-y-auto"></div>
+          </div>
+
+        </div>
+
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- ============================================================== -->
+  <!-- MODAL 1: 维保网格人员库管理模态窗口 (Personnel Roster Manager) -->
+  <!-- ============================================================== -->
+  <div id="personnel-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-3 sm:p-6 overflow-y-auto">
+    <div class="bg-slate-900 border border-cyan-500/40 rounded-3xl max-w-4xl w-full p-5 sm:p-7 text-white shadow-2xl relative my-auto space-y-5">
+      
+      <button onclick="closePersonnelModal()" class="absolute top-4 right-4 w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 flex items-center justify-center text-slate-400 hover:text-white transition">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+
+      <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-4">
+        <div>
+          <div class="flex items-center gap-2">
+            <h2 class="text-base sm:text-lg font-bold text-white flex items-center gap-2">
+              <i class="fa-solid fa-users text-cyan-400"></i>
+              <span>高校后勤·网格维保人员管理中枢</span>
+            </h2>
+            <span class="text-[11px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 font-mono border border-emerald-500/30">
+              实时联网
+            </span>
+          </div>
+          <p class="text-xs text-slate-400 mt-1">负责全校强电、消防、供水暖通及塞外冰雪清运的网格师傅名录</p>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-2">
+          <button onclick="openGroupConfigModal()" class="px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500/20 to-yellow-500/20 hover:from-amber-500/30 hover:to-yellow-500/30 text-amber-300 border border-amber-500/40 text-xs font-bold flex items-center gap-1.5 transition shadow">
+            <i class="fa-solid fa-diagram-project"></i>
+            <span>⚙️ 班组分工自定义配置</span>
+          </button>
+
+          <button onclick="downloadCsvTemplate()" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-750 text-cyan-300 border border-cyan-500/30 text-xs font-bold flex items-center gap-1.5 transition shadow">
+            <i class="fa-solid fa-file-arrow-down"></i>
+            <span>下载导入模板(CSV)</span>
+          </button>
+
+          <label class="cursor-pointer px-3 py-1.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 text-xs font-black flex items-center gap-1.5 transition shadow">
+            <i class="fa-solid fa-file-import"></i>
+            <span>批量导入CSV</span>
+            <input type="file" id="csv-file-input" accept=".csv" class="hidden" onchange="handleCsvImport(event)">
+          </label>
+
+          <button onclick="syncExternalDirectory()" id="btn-sync-wecom" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-bold flex items-center gap-1.5 transition">
+            <i class="fa-solid fa-arrows-rotate"></i>
+            <span>同步企业微信/超星</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Quick Add New Personnel Form -->
+      <div class="bg-slate-950/70 border border-slate-800 rounded-2xl p-4 space-y-3">
+        <div class="text-xs font-bold text-slate-300 flex items-center gap-1.5">
+          <i class="fa-solid fa-user-plus text-cyan-400"></i>
+          <span>手动新增在册维保人员</span>
+        </div>
+        <div class="grid grid-cols-2 sm:grid-cols-5 gap-2 text-xs">
+          <input type="text" id="new-staff-name" placeholder="师傅姓名 (如: 孙建国)" class="bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-1.5 text-slate-200 focus:outline-none focus:border-cyan-400">
+          <select id="new-staff-group" class="bg-slate-900 border border-slate-700 rounded-xl px-2 py-1.5 text-slate-200 focus:outline-none focus:border-cyan-400">
+          </select>
+          <input type="text" id="new-staff-grid" placeholder="负责网格 (如: 实训A/B座)" class="bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-1.5 text-slate-200 focus:outline-none focus:border-cyan-400">
+          <input type="text" id="new-staff-phone" placeholder="手机号 (如: 1380471****)" class="bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-1.5 text-slate-200 focus:outline-none focus:border-cyan-400">
+          <button onclick="addNewPersonnelManual()" class="col-span-2 sm:col-span-1 bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-black rounded-xl px-3 py-1.5 transition">
+            + 录入人员
+          </button>
+        </div>
+      </div>
+
+      <!-- Filter Tabs & Personnel Table -->
+      <div class="space-y-3">
+        <div id="roster-filter-tabs-container" class="flex items-center gap-2 overflow-x-auto pb-1 text-xs"></div>
+
+        <div class="max-h-[300px] overflow-y-auto border border-slate-800 rounded-2xl bg-slate-950/60">
+          <table class="w-full text-left text-xs text-slate-300 border-collapse">
+            <thead class="bg-slate-900/90 text-slate-400 sticky top-0 border-b border-slate-800">
+              <tr>
+                <th class="p-3">工号</th>
+                <th class="p-3">姓名</th>
+                <th class="p-3">专业技能组</th>
+                <th class="p-3">负责楼宇网格</th>
+                <th class="p-3">联系方式</th>
+                <th class="p-3">当前在岗状态</th>
+                <th class="p-3 text-right">操作</th>
+              </tr>
+            </thead>
+            <tbody id="personnel-table-body" class="divide-y divide-slate-800/60 font-mono">
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="flex items-center justify-between pt-2 border-t border-slate-800 text-xs text-slate-400">
+        <span>支持将本地 Excel 通讯录另存为 .csv 直接拖入导入</span>
+        <button onclick="closePersonnelModal()" class="px-5 py-2 rounded-xl bg-slate-800 hover:bg-slate-750 text-white font-bold transition">
+          关闭面板
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ============================================================== -->
+  <!-- MODAL 4: 班组与专业分工配置模态窗口 (Skill Groups Config Modal) -->
+  <!-- ============================================================== -->
+  <div id="group-config-modal" class="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm hidden flex items-center justify-center p-3 sm:p-6 overflow-y-auto">
+    <div class="bg-slate-900 border border-amber-500/40 rounded-3xl max-w-xl w-full p-5 sm:p-7 text-white shadow-2xl relative my-auto space-y-4">
+      <button onclick="closeGroupConfigModal()" class="absolute top-4 right-4 w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 flex items-center justify-center text-slate-400 hover:text-white transition">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+
+      <div class="flex items-center gap-3 border-b border-slate-800 pb-3">
+        <div class="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center text-lg border border-amber-500/40">
+          <i class="fa-solid fa-diagram-project"></i>
+        </div>
+        <div>
+          <h3 class="text-base font-bold text-white">高校后勤·班组专业分工自定义</h3>
+          <p class="text-xs text-slate-400">根据院校实际编制自主定制，支持一键精简或细化</p>
+        </div>
+      </div>
+
+      <div class="bg-slate-950 p-3.5 rounded-2xl border border-slate-800 space-y-2">
+        <div class="text-xs font-bold text-amber-400 flex items-center gap-1.5">
+          <i class="fa-solid fa-bolt"></i> 快捷分工模式一键切换
+        </div>
+        <div class="grid grid-cols-2 gap-2 text-xs">
+          <button onclick="applyGroupTemplate('minimal')" class="p-2.5 rounded-xl bg-slate-800/90 hover:bg-slate-750 border border-slate-700 text-left transition active:scale-95">
+            <span class="font-bold text-cyan-300 block mb-0.5">🚀 极简二元模式</span>
+            <span class="text-[10px] text-slate-400 leading-tight block">仅设【综合后勤组】与【安全保卫组】，适合中小校区或中职</span>
+          </button>
+          <button onclick="applyGroupTemplate('standard')" class="p-2.5 rounded-xl bg-slate-800/90 hover:bg-slate-750 border border-slate-700 text-left transition active:scale-95">
+            <span class="font-bold text-emerald-300 block mb-0.5">🏛️ 高校精细模式</span>
+            <span class="text-[10px] text-slate-400 leading-tight block">强电照明、消防安保、给排水暖通、塞外冰雪清运等4-6个专组</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="space-y-2">
+        <div class="flex items-center justify-between text-xs">
+          <span class="font-bold text-slate-300">当前在用班组分工列表：</span>
+          <span class="text-[10px] text-slate-400 font-mono">共 <span id="group-list-count" class="text-amber-400">4</span> 个班组</span>
+        </div>
+
+        <div id="group-items-container" class="space-y-1.5 max-h-48 overflow-y-auto"></div>
+
+        <div class="flex gap-2 pt-2 text-xs">
+          <input type="text" id="new-group-name-input" placeholder="输入新班组名称 (如: 网络弱电组、绿化保洁队)" class="flex-1 bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-amber-400">
+          <button onclick="addNewCustomGroup()" class="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs transition">
+            + 添加新分工
+          </button>
+        </div>
+      </div>
+
+      <div class="pt-3 border-t border-slate-800 flex justify-end">
+        <button onclick="closeGroupConfigModal()" class="px-5 py-2 rounded-xl bg-slate-800 hover:bg-slate-750 text-white font-bold text-xs transition">
+          完成并应用配置
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================== -->
+  <!-- MODAL 5: 快捷隐患卡片管理模态窗口 (Preset Scenarios Config Modal) -->
+  <!-- ============================================================== -->
+  <div id="preset-config-modal" class="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm hidden flex items-center justify-center p-3 sm:p-6 overflow-y-auto">
+    <div class="bg-slate-900 border border-cyan-500/40 rounded-3xl max-w-2xl w-full p-5 sm:p-7 text-white shadow-2xl relative my-auto space-y-4">
+      <button onclick="closePresetConfigModal()" class="absolute top-4 right-4 w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 flex items-center justify-center text-slate-400 hover:text-white transition">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+
+      <div class="flex items-center gap-3 border-b border-slate-800 pb-3">
+        <div class="w-10 h-10 rounded-xl bg-cyan-500/20 text-cyan-400 flex items-center justify-center text-lg border border-cyan-500/40">
+          <i class="fa-solid fa-sliders"></i>
+        </div>
+        <div>
+          <h3 class="text-base font-bold text-white">典型安全隐患快捷卡片自定义</h3>
+          <p class="text-xs text-slate-400">自由增删改移动端诊断快捷项，自定义本校真实隐患场景</p>
+        </div>
+      </div>
+
+      <div class="space-y-2">
+        <div class="flex items-center justify-between text-xs">
+          <span class="font-bold text-slate-300">当前快捷卡片列表：</span>
+          <button onclick="resetDefaultPresets()" class="text-[10px] text-cyan-400 hover:underline">恢复初始4项预设</button>
+        </div>
+
+        <div id="preset-items-editor-container" class="space-y-2 max-h-60 overflow-y-auto pr-1"></div>
+      </div>
+
+      <div class="bg-slate-950 p-3.5 rounded-2xl border border-slate-800 space-y-2 text-xs">
+        <span class="font-bold text-cyan-400 block">+ 新增自定义快捷卡片</span>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+          <input type="text" id="new-preset-title" placeholder="卡片标题 (如: 实验室消防栓缺水带)" class="bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-1.5 text-slate-200">
+          <input type="text" id="new-preset-loc" placeholder="发生地点 (如: 化工实训楼201)" class="bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-1.5 text-slate-200">
+          <select id="new-preset-level" class="bg-slate-900 border border-slate-700 rounded-xl px-2 py-1.5 text-slate-200">
+            <option value="S">S级 特急隐患</option>
+            <option value="A">A级 高危隐患</option>
+            <option value="B">B级 中危隐患</option>
+            <option value="C">C级 低危隐患</option>
+          </select>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          <select id="new-preset-group" class="bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-1.5 text-slate-200">
+          </select>
+          <input type="text" id="new-preset-materials" placeholder="推荐备料 (如: DN65消防水带*1卷)" class="bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-1.5 text-slate-200">
+        </div>
+        <input type="text" id="new-preset-desc" placeholder="AI 诊断说明 (如: 灭火箱内水枪头缺失，箱门玻璃破碎)" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-1.5 text-slate-200">
+        
+        <button onclick="addNewCustomPreset()" class="w-full py-2 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-black rounded-xl transition">
+          + 添加至移动端快捷列表
+        </button>
+      </div>
+
+      <div class="pt-3 border-t border-slate-800 flex justify-end">
+        <button onclick="closePresetConfigModal()" class="px-5 py-2 rounded-xl bg-slate-800 hover:bg-slate-750 text-white font-bold text-xs transition">
+          保存并关闭
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================== -->
+  <!-- MODAL 2: 工单流转详情与处置模态窗口 (Ticket Flow Modal)         -->
+  <!-- ============================================================== -->
+  <div id="ticket-modal" class="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm hidden flex items-center justify-center p-3 sm:p-6 overflow-y-auto">
+    <div class="bg-slate-900 border border-cyan-500/40 rounded-3xl max-w-2xl w-full p-5 sm:p-7 text-white shadow-2xl relative my-auto space-y-4">
+      <button onclick="closeTicketModal()" class="absolute top-4 right-4 w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 flex items-center justify-center text-slate-400 hover:text-white transition">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <div class="flex items-center gap-2">
+          <span id="modal-ticket-id" class="text-xs font-mono px-2 py-0.5 rounded bg-cyan-950 text-cyan-400 border border-cyan-800">NA-20261030-001</span>
+          <span id="modal-level-badge" class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-500/20 text-red-400 border border-red-500/30">特急隐患 (S级)</span>
+          <span id="modal-urgency-badge" class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-600/30 text-red-300 border border-red-500/40">🔥 急需抢修</span>
+        </div>
+        <button onclick="copyTicketNumber()" class="text-xs text-slate-400 hover:text-cyan-300 transition mr-8">
+          <i class="fa-regular fa-copy mr-1"></i>复制工单号
+        </button>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div id="modal-image-preview" class="aspect-[4/3] rounded-xl overflow-hidden bg-slate-950 border border-slate-800 flex items-center justify-center"></div>
+        <div class="space-y-2 text-xs">
+          <div>
+            <h3 id="modal-title" class="text-sm font-bold text-white mb-1">配电箱动力线裸露碳化</h3>
+            <div class="text-slate-400 text-[11px]"><i class="fa-solid fa-clock mr-1"></i>上报时间：<span id="modal-time" class="font-mono text-slate-300">2026-10-30 12:15</span></div>
+            <div class="text-slate-400 text-[11px]"><i class="fa-solid fa-location-dot mr-1"></i>具体网格：<span id="modal-loc" class="text-slate-300">电子信息实验大楼 B座302室</span></div>
+            <div class="text-amber-300 text-[11px] font-semibold bg-amber-950/40 border border-amber-800/60 p-1.5 rounded-lg mt-1">
+              <i class="fa-solid fa-calendar-check mr-1 text-amber-400"></i>预约时间：<span id="modal-appointment-time">立即抢修 (特别着急)</span>
+            </div>
+          </div>
+          <div class="bg-slate-950/70 p-2.5 rounded-xl border border-slate-800">
+            <span class="text-slate-400 block text-[10px] mb-0.5">AI 诊断结论</span>
+            <p id="modal-eval-desc" class="text-slate-200 text-[11px] leading-relaxed">实训室主配电箱保护套管破损，内部380V动力主线绝缘皮碳化脱落，存在严重电弧打火与触电风险。</p>
+          </div>
+          <div class="bg-cyan-950/30 p-2.5 rounded-xl border border-cyan-800/40">
+            <span class="text-cyan-400 font-bold block text-[10px] mb-0.5">推荐领料备件</span>
+            <p id="modal-materials" class="text-slate-300 text-[11px] font-mono">阻燃绝缘套管*2、防漏电断路器*1</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-slate-950/80 p-3 rounded-xl border border-slate-800 flex items-center justify-between text-xs">
+        <div>
+          <span class="text-slate-400 block text-[10px]">当前流转状态与责任师傅</span>
+          <div id="modal-assigned-worker" class="font-bold text-white mt-0.5"><i class="fa-solid fa-user-gear text-cyan-400"></i> 暂未指派</div>
+        </div>
+        <div id="modal-status-text" class="text-right"></div>
+      </div>
+
+      <div class="pt-2 border-t border-slate-800 flex items-center justify-between">
+        <span class="text-[11px] text-slate-500">网格化敏捷调度中心 · 实时状态流转</span>
+        <div id="modal-flow-actions" class="flex gap-2"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================== -->
+  <!-- MODAL 3: 智能指派维保人员弹窗 (Smart Dispatch Modal)           -->
+  <!-- ============================================================== -->
+  <div id="dispatch-modal" class="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm hidden flex items-center justify-center p-3 sm:p-6 overflow-y-auto">
+    <div class="bg-slate-900 border border-cyan-500/40 rounded-3xl max-w-xl w-full p-5 sm:p-7 text-white shadow-2xl relative my-auto space-y-4">
+      <button onclick="closeDispatchModal()" class="absolute top-4 right-4 w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 flex items-center justify-center text-slate-400 hover:text-white transition">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+
+      <div class="flex items-center gap-2.5 border-b border-slate-800 pb-3">
+        <div class="w-9 h-9 rounded-xl bg-cyan-500/20 text-cyan-400 flex items-center justify-center text-base border border-cyan-500/30">
+          <i class="fa-solid fa-paper-plane"></i>
+        </div>
+        <div>
+          <h3 class="text-sm sm:text-base font-bold text-white">智能派发工单 · 选派在岗师傅</h3>
+          <p class="text-[11px] text-slate-400">系统已自动按技能班组与楼宇网格进行空闲排班优先匹配</p>
+        </div>
+      </div>
+
+      <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 text-xs space-y-1">
+        <div class="flex justify-between items-center">
+          <span class="text-slate-400">待派工单：<span id="dispatch-ticket-id" class="font-mono text-cyan-400">NA-20261030-001</span></span>
+          <span id="dispatch-ticket-level" class="font-bold text-red-400">S级 特急隐患</span>
+        </div>
+        <div class="font-bold text-white" id="dispatch-ticket-title">配电箱电线裸露破损</div>
+        <div class="text-slate-400 text-[11px]">目标网格：<span id="dispatch-ticket-location" class="text-slate-300">电子信息实验大楼 B座302室</span></div>
+        <div class="text-[11px] text-amber-300">师傅到场预约时限：<span id="dispatch-ticket-appointment" class="font-bold">立即抢修</span></div>
+        <div class="text-[11px] text-amber-400">匹配技能组要求：<span id="dispatch-recommended-group" class="font-bold">强电照明组</span></div>
+      </div>
+
+      <div class="space-y-2">
+        <span class="text-xs font-bold text-slate-300 block">推荐空闲在岗师傅列表：</span>
+        <div id="dispatch-technician-list" class="space-y-2 max-h-56 overflow-y-auto"></div>
+      </div>
+
+      <div class="pt-2 border-t border-slate-800 flex justify-end">
+        <button onclick="closeDispatchModal()" class="px-4 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs transition">
+          取消
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================== -->
+  <!-- JAVASCRIPT: DATA STRUCTURES & CORE ENGINE                      -->
+  <!-- ============================================================== -->
+  <script>
+    /* -------------------------------------------------------------
+     * 1. CONFIGURABLE SKILL GROUPS (Dynamic Departments)
+     * ------------------------------------------------------------- */
+    let skillGroups = ['强电照明组', '消防安全组', '给排水管道组', '塞外冰雪清运组'];
+
+    /* -------------------------------------------------------------
+     * 2. CONFIGURABLE SCENARIOS PRESETS (Dynamic Quick Cards)
+     * ------------------------------------------------------------- */
+    let presetScenarios = [
+      {
+        id: 'electric',
+        title: '配电箱电线裸露破损',
+        level: 'S',
+        levelName: '特急隐患',
+        category: '用电安全',
+        confidence: '99.4%',
+        desc: '实训室主配电箱保护套管破损，内部380V动力主线绝缘皮碳化脱落，存在严重电弧打火与触电风险。',
+        group: '强电照明组',
+        materials: '阻燃绝缘套管*2、380V断路开关*1、绝缘高压胶带*1卷',
+        location: '电子信息实验大楼 B座302室',
+        icon: 'fa-bolt',
+        bbox: { top: 25, left: 28, width: 44, height: 50 },
+        svg: `
+          <svg viewBox="0 0 400 300" class="w-full h-full">
+            <rect width="400" height="300" fill="#1e293b"/>
+            <rect x="80" y="40" width="240" height="220" rx="8" fill="#334155" stroke="#64748b" stroke-width="4"/>
+            <rect x="100" y="60" width="200" height="180" rx="4" fill="#0f172a"/>
+            <rect x="120" y="80" width="40" height="60" fill="#475569"/>
+            <rect x="180" y="80" width="40" height="60" fill="#475569"/>
+            <rect x="240" y="80" width="40" height="60" fill="#475569"/>
+            <path d="M140 140 Q150 200 130 230" stroke="#ef4444" stroke-width="6" fill="none" stroke-linecap="round"/>
+            <path d="M200 140 Q170 190 220 220" stroke="#f59e0b" stroke-width="6" fill="none" stroke-linecap="round"/>
+            <path d="M260 140 Q290 190 270 230" stroke="#38bdf8" stroke-width="6" fill="none" stroke-linecap="round"/>
+            <polygon points="190,170 205,185 195,188 215,210 195,195 202,190" fill="#fef08a"/>
+            <circle cx="195" cy="188" r="16" fill="#fef08a" opacity="0.3" class="animate-ping"/>
+            <polygon points="200,45 190,62 210,62" fill="#eab308"/>
+            <text x="198" y="59" font-size="12" font-weight="bold" fill="#000" text-anchor="middle">!</text>
+          </svg>`
+      },
+      {
+        id: 'fire',
+        title: '消防逃生通道堆放杂物阻塞',
+        level: 'A',
+        levelName: '高危隐患',
+        category: '消防安全',
+        confidence: '98.7%',
+        desc: '宿舍楼西侧消防安全通道拐角处违规堆积大量废弃快递纸箱与旧桌椅，通道通行宽度已不足0.4米。',
+        group: '消防安全组',
+        materials: '清运推车*2、违规占用警示标牌*3',
+        location: '1号学生公寓楼 西侧2楼安全出口',
+        icon: 'fa-fire-extinguisher',
+        bbox: { top: 32, left: 22, width: 56, height: 52 },
+        svg: `
+          <svg viewBox="0 0 400 300" class="w-full h-full">
+            <rect width="400" height="300" fill="#0f172a"/>
+            <polygon points="0,0 400,0 320,180 80,180" fill="#1e293b"/>
+            <polygon points="80,180 320,180 400,300 0,300" fill="#334155"/>
+            <rect x="160" y="30" width="80" height="30" rx="4" fill="#15803d" stroke="#22c55e" stroke-width="2"/>
+            <text x="200" y="50" font-size="12" font-weight="bold" fill="#ffffff" text-anchor="middle">EXIT 安全出口</text>
+            <rect x="130" y="160" width="60" height="50" fill="#b45309" stroke="#78350f" stroke-width="2"/>
+            <rect x="175" y="140" width="55" height="45" fill="#d97706" stroke="#92400e" stroke-width="2"/>
+            <rect x="210" y="170" width="70" height="60" fill="#92400e" stroke="#78350f" stroke-width="2"/>
+          </svg>`
+      },
+      {
+        id: 'ice',
+        title: '室外主干道阶梯积雪结冰',
+        level: 'B',
+        levelName: '中危隐患',
+        category: '环境安全',
+        confidence: '97.2%',
+        desc: '塞外降雪后气温骤降，图书馆主入口花岗岩台阶表面出现大面积黑色暗冰，已造成行人和推自行车学生多次滑跌。',
+        group: '塞外冰雪清运组',
+        materials: '工业环保除雪剂*3包、防滑橡胶草垫*20米、防滑提示牌*2',
+        location: '图文信息中心 正门南侧台阶',
+        icon: 'fa-snowflake',
+        bbox: { top: 35, left: 18, width: 64, height: 50 },
+        svg: `
+          <svg viewBox="0 0 400 300" class="w-full h-full">
+            <rect width="400" height="300" fill="#1e293b"/>
+            <polygon points="50,120 350,120 370,160 30,160" fill="#475569"/>
+            <polygon points="30,160 370,160 390,210 10,210" fill="#64748b"/>
+            <polygon points="10,210 390,210 400,270 0,270" fill="#475569"/>
+            <path d="M60 120 Q120 125 180 120 T300 120 L310 135 L50 135 Z" fill="#e0f2fe" opacity="0.85"/>
+            <path d="M40 160 Q150 168 260 160 T360 162 L350 180 L35 180 Z" fill="#bae6fd" opacity="0.9"/>
+            <ellipse cx="200" cy="190" rx="90" ry="18" fill="#ffffff" opacity="0.45"/>
+          </svg>`
+      },
+      {
+        id: 'pipe',
+        title: '盥洗室供水球阀破裂喷淋',
+        level: 'C',
+        levelName: '低危隐患',
+        category: '设施破损',
+        confidence: '99.1%',
+        desc: '教学楼一楼洗手间洗手盆底部冷水软管爆裂，水流喷射至走廊地面，有积水漫入附近多媒体教室的风险。',
+        group: '给排水管道组',
+        materials: 'DN15高压防爆金属编织软管*1、生料带*2、不锈钢三角阀*1',
+        location: '第一教学楼 1楼东侧男卫生间',
+        icon: 'fa-faucet-drip',
+        bbox: { top: 28, left: 30, width: 42, height: 55 },
+        svg: `
+          <svg viewBox="0 0 400 300" class="w-full h-full">
+            <rect width="400" height="300" fill="#0f172a"/>
+            <rect x="50" y="30" width="300" height="150" fill="#1e293b" stroke="#334155" stroke-width="2"/>
+            <path d="M120 150 L280 150 L260 210 L140 210 Z" fill="#f8fafc" stroke="#cbd5e1" stroke-width="3"/>
+            <path d="M200 110 L200 150" stroke="#94a3b8" stroke-width="8" stroke-linecap="round"/>
+            <path d="M180 200 Q230 210 260 260" stroke="#38bdf8" stroke-width="5" fill="none" stroke-dasharray="4,4"/>
+            <ellipse cx="200" cy="270" rx="90" ry="15" fill="#0284c7" opacity="0.6"/>
+          </svg>`
+      }
+    ];
+
+    /* -------------------------------------------------------------
+     * 3. PERSONNEL ROSTER DATABASE
+     * ------------------------------------------------------------- */
+    let personnel = [
+      { id: 'WB-0101', name: '张建国', dept: '后勤动力科', group: '强电照明组', grid: '实训楼A/B座', phone: '138****0921', status: 'IDLE' },
+      { id: 'WB-0102', name: '李德胜', dept: '后勤动力科', group: '强电照明组', grid: '教学1-3号楼', phone: '139****1182', status: 'BUSY' },
+      { id: 'WB-0103', name: '呼和巴特尔', dept: '实训安全中心', group: '强电照明组', grid: '实训中心与机房', phone: '136****5409', status: 'IDLE' },
+      { id: 'WB-0201', name: '王振华', dept: '保卫综合科', group: '消防安全组', grid: '学生公寓1-6号楼', phone: '139****7742', status: 'IDLE' },
+      { id: 'WB-0202', name: '陈志坚', dept: '保卫综合科', group: '消防安全组', grid: '图文中心与礼堂', phone: '137****8901', status: 'IDLE' },
+      { id: 'WB-0203', name: '阿茹汗', dept: '保卫综合科', group: '消防安全组', grid: '餐饮中心与超市', phone: '158****2213', status: 'BUSY' },
+      { id: 'WB-0301', name: '赵大勇', dept: '后勤水暖科', group: '给排水管道组', grid: '教学楼各卫生间', phone: '136****9912', status: 'IDLE' },
+      { id: 'WB-0302', name: '韩立春', dept: '后勤水暖科', group: '给排水管道组', grid: '换热站与浴室', phone: '135****4478', status: 'IDLE' },
+      { id: 'WB-0401', name: '刘长林', dept: '校园环卫队', group: '塞外冰雪清运组', grid: '校区主干道与大门', phone: '135****5621', status: 'IDLE' },
+      { id: 'WB-0402', name: '蒙古勒', dept: '校园环卫队', group: '塞外冰雪清运组', grid: '图书馆正门台阶', phone: '186****3399', status: 'IDLE' },
+      { id: 'WB-0403', name: '吴玉珍', dept: '校园绿化科', group: '塞外冰雪清运组', grid: '操场与看台周边', phone: '133****6677', status: 'LEAVE' },
+      { id: 'WB-0104', name: '马金鹏', dept: '后勤动力科', group: '强电照明组', grid: '风雨球馆与路灯', phone: '159****8833', status: 'IDLE' }
+    ];
+
+    /* -------------------------------------------------------------
+     * 4. TICKETS KANBAN STORE
+     * ------------------------------------------------------------- */
+    let tickets = [
+      {
+        id: 'NA-20261030-001',
+        title: '配电箱动力线裸露碳化',
+        level: 'S',
+        levelName: '特急隐患',
+        category: '用电安全',
+        status: 'pending',
+        isUrgent: true,
+        appointmentTime: '立即排障 (特别着急)',
+        location: '电子信息实验大楼 B座302室',
+        time: '12:15',
+        group: '强电照明组',
+        worker: '暂未指派',
+        materials: '阻燃绝缘套管*2、防漏电断路器*1',
+        desc: '实训室主配电箱保护套管破损，内部380V动力主线绝缘皮碳化脱落，存在严重电弧打火与触电风险。',
+        scenarioKey: 'electric'
+      },
+      {
+        id: 'NA-20261030-002',
+        title: '消防安全通道违规堆物',
+        level: 'A',
+        levelName: '高危隐患',
+        category: '消防安全',
+        status: 'dispatched',
+        isUrgent: true,
+        appointmentTime: '2026-10-30 14:00 (今日下午尽快)',
+        location: '1号学生公寓楼 西侧2楼安全出口',
+        time: '11:40',
+        group: '消防安全组',
+        worker: '王振华 (消防安全组 · 139****7742)',
+        materials: '清运推车*2、违规占用警示标牌*3',
+        desc: '宿舍楼西侧消防安全通道拐角处违规堆积大量废弃快递纸箱与旧桌椅，通道通行宽度已不足0.4米。',
+        scenarioKey: 'fire'
+      },
+      {
+        id: 'NA-20261030-003',
+        title: '室外主干道阶梯积雪结冰',
+        level: 'B',
+        levelName: '中危隐患',
+        category: '环境安全',
+        status: 'repairing',
+        isUrgent: false,
+        appointmentTime: '2026-10-30 15:30 (下课前清雪完毕)',
+        location: '图文信息中心 正门南侧台阶',
+        time: '10:55',
+        group: '塞外冰雪清运组',
+        worker: '蒙古勒 (塞外冰雪清运组 · 186****3399)',
+        materials: '工业环保除雪剂*3包、防滑橡胶草垫*20米',
+        desc: '塞外降雪后气温骤降，图书馆主入口花岗岩台阶表面出现大面积黑色暗冰，已造成行人和推自行车学生多次滑跌。',
+        scenarioKey: 'ice'
+      },
+      {
+        id: 'NA-20261030-004',
+        title: '盥洗室供水球阀破裂喷淋',
+        level: 'C',
+        levelName: '低危隐患',
+        category: '设施破损',
+        status: 'closed',
+        isUrgent: false,
+        appointmentTime: '2026-10-30 10:00 (早间课后排修)',
+        location: '第一教学楼 1楼东侧男卫生间',
+        time: '09:20',
+        group: '给排水管道组',
+        worker: '赵大勇 (给排水管道组 · 136****9912)',
+        materials: 'DN15高压防爆金属编织软管*1、生料带*2',
+        desc: '教学楼一楼洗手间洗手盆底部冷水软管爆裂，水流喷射至走廊地面，已更换新球阀并修复闭环。',
+        scenarioKey: 'pipe'
+      }
+    ];
+
+    let currentScenario = presetScenarios[0];
+    let activeTicket = null;
+    let dispatchTargetTicket = null;
+    let currentRosterFilter = 'ALL';
+    let currentIsUrgent = true;
+
+    /* -------------------------------------------------------------
+     * 5. INIT & CONTROLLER SETUP
+     * ------------------------------------------------------------- */
+    window.addEventListener('DOMContentLoaded', () => {
+      initDateTimePickerOptions();
+      renderSkillGroupControls();
+      renderPresetScenarios();
+      loadScenario(presetScenarios[0].id);
+      updateClock();
+      setInterval(updateClock, 1000);
+      renderKanbanBoard();
+      initCharts();
+      renderPersonnelTable();
+    });
+
+    function updateClock() {
+      const now = new Date();
+      const el = document.getElementById('phone-clock');
+      if (el) {
+        el.textContent = now.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+      }
+    }
+
+    /* -------------------------------------------------------------
+     * NEW: DATE-TIME PICKER DROPDOWNS (00-59 FULL MINUTES)
+     * ------------------------------------------------------------- */
+    function initDateTimePickerOptions() {
+      const monthSel = document.getElementById('appoint-month');
+      const daySel = document.getElementById('appoint-day');
+      const hourSel = document.getElementById('appoint-hour');
+      const minuteSel = document.getElementById('appoint-minute');
+
+      if (monthSel) {
+        monthSel.innerHTML = Array.from({ length: 12 }, (_, i) => {
+          const m = i + 1;
+          const val = String(m).padStart(2, '0');
+          return `<option value="${val}" ${m === 10 ? 'selected' : ''}>${m}月</option>`;
+        }).join('');
+      }
+
+      if (daySel) {
+        daySel.innerHTML = Array.from({ length: 31 }, (_, i) => {
+          const d = i + 1;
+          const val = String(d).padStart(2, '0');
+          return `<option value="${val}" ${d === 30 ? 'selected' : ''}>${d}日</option>`;
+        }).join('');
+      }
+
+      if (hourSel) {
+        hourSel.innerHTML = Array.from({ length: 24 }, (_, i) => {
+          const val = String(i).padStart(2, '0');
+          return `<option value="${val}" ${i === 14 ? 'selected' : ''}>${val}点</option>`;
+        }).join('');
+      }
+
+      // Populate full 00-59 minute options
+      if (minuteSel) {
+        minuteSel.innerHTML = Array.from({ length: 60 }, (_, i) => {
+          const val = String(i).padStart(2, '0');
+          return `<option value="${val}" ${i === 0 ? 'selected' : ''}>${val}分</option>`;
+        }).join('');
+      }
+
+      // Default quick text box
+      document.getElementById('appointment-text-input').value = '立即排障 (特别着急)';
+    }
+
+    function syncFromDropdowns() {
+      const y = document.getElementById('appoint-year').value;
+      const m = document.getElementById('appoint-month').value;
+      const d = document.getElementById('appoint-day').value;
+      const h = document.getElementById('appoint-hour').value;
+      const min = document.getElementById('appoint-minute').value;
+
+      const formatted = `${y}-${m}-${d} ${h}:${min}`;
+      document.getElementById('appointment-text-input').value = formatted;
+      showToast(`已选择预约时间：${formatted}`, 'info');
+    }
+
+    function setUrgency(urgent) {
+      currentIsUrgent = urgent;
+      const btnYes = document.getElementById('btn-urgency-yes');
+      const btnNo = document.getElementById('btn-urgency-no');
+      const input = document.getElementById('appointment-text-input');
+
+      if (urgent) {
+        btnYes.className = "py-2 px-3 rounded-xl border text-xs font-bold flex items-center justify-center gap-1.5 transition bg-red-500/20 text-red-400 border-red-500/50 shadow";
+        btnNo.className = "py-2 px-3 rounded-xl border text-xs font-bold flex items-center justify-center gap-1.5 transition bg-slate-900/80 text-slate-400 border-slate-700";
+        input.value = "立即排障 (特别着急)";
+        showToast("已设为【特别着急】：系统将优先调度就近在岗师傅！", "warning");
+      } else {
+        btnNo.className = "py-2 px-3 rounded-xl border text-xs font-bold flex items-center justify-center gap-1.5 transition bg-cyan-500/20 text-cyan-300 border-cyan-500/50 shadow";
+        btnYes.className = "py-2 px-3 rounded-xl border text-xs font-bold flex items-center justify-center gap-1.5 transition bg-slate-900/80 text-slate-400 border-slate-700";
+        if (input.value.includes('立即')) {
+          syncFromDropdowns();
+        }
+        showToast("已设为【常规预约】：可自定义师傅上门/清运时间", "info");
+      }
+    }
+
+    function setQuickAppointment(type) {
+      const input = document.getElementById('appointment-text-input');
+      const now = new Date();
+
+      if (type === 'now') {
+        setUrgency(true);
+        input.value = '立即排障 (特别着急)';
+      } else if (type === 'today_pm') {
+        setUrgency(false);
+        input.value = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')} 15:30 (今日下午)`;
+      } else if (type === 'tomorrow') {
+        setUrgency(false);
+        const tom = new Date(now.getTime() + 86400000);
+        input.value = `${tom.getFullYear()}-${String(tom.getMonth()+1).padStart(2,'0')}-${String(tom.getDate()).padStart(2,'0')} 09:30 (明日上午)`;
+      }
+    }
+
+    function switchView(view) {
+      const mobileSection = document.getElementById('view-mobile');
+      const dashSection = document.getElementById('view-dashboard');
+      const btnMobile = document.getElementById('btn-nav-mobile');
+      const btnDash = document.getElementById('btn-nav-dashboard');
+
+      if (view === 'mobile') {
+        mobileSection.classList.remove('hidden');
+        dashSection.classList.add('hidden');
+        btnMobile.className = "flex items-center gap-2 px-3 sm:px-4 py-1.5 rounded-lg text-xs font-bold transition-all duration-200 bg-gradient-to-r from-cyan-500 to-blue-600 text-slate-950 shadow-md";
+        btnDash.className = "flex items-center gap-2 px-3 sm:px-4 py-1.5 rounded-lg text-xs font-bold text-slate-400 hover:text-white transition-all duration-200 relative";
+      } else {
+        mobileSection.classList.add('hidden');
+        dashSection.classList.remove('hidden');
+        btnDash.className = "flex items-center gap-2 px-3 sm:px-4 py-1.5 rounded-lg text-xs font-bold transition-all duration-200 bg-gradient-to-r from-cyan-500 to-blue-600 text-slate-950 shadow-md relative";
+        btnMobile.className = "flex items-center gap-2 px-3 sm:px-4 py-1.5 rounded-lg text-xs font-bold text-slate-400 hover:text-white transition-all duration-200";
+        refreshCharts();
+      }
+    }
+
+    function triggerAiScan() {
+      const scanner = document.getElementById('laser-scanner');
+      const bbox = document.getElementById('bounding-box');
+      const card = document.getElementById('diagnosis-card');
+
+      scanner.classList.remove('hidden');
+      bbox.classList.add('hidden');
+      card.style.opacity = '0.5';
+
+      setTimeout(() => {
+        scanner.classList.add('hidden');
+        card.style.opacity = '1';
+
+        if (currentScenario.bbox) {
+          bbox.style.top = currentScenario.bbox.top + '%';
+          bbox.style.left = currentScenario.bbox.left + '%';
+          bbox.style.width = currentScenario.bbox.width + '%';
+          bbox.style.height = currentScenario.bbox.height + '%';
+          document.getElementById('bbox-tag').textContent = `DETECT: ${currentScenario.confidence}`;
+          bbox.classList.remove('hidden');
+        }
+
+        const badge = document.getElementById('diag-badge-level');
+        badge.textContent = `${currentScenario.levelName} (${currentScenario.level}级)`;
+        if (currentScenario.level === 'S') badge.className = "text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-500/20 text-red-400 border border-red-500/40";
+        else if (currentScenario.level === 'A') badge.className = "text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/40";
+        else if (currentScenario.level === 'B') badge.className = "text-[10px] font-bold px-2 py-0.5 rounded-full bg-yellow-400/20 text-yellow-300 border border-yellow-400/40";
+        else badge.className = "text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-400 border border-blue-500/40";
+
+        document.getElementById('diag-category').textContent = currentScenario.category;
+        document.getElementById('diag-confidence').textContent = `${currentScenario.confidence} (高置信)`;
+        document.getElementById('diag-desc').textContent = currentScenario.desc;
+        document.getElementById('diag-trade').textContent = currentScenario.group;
+        document.getElementById('diag-materials').textContent = currentScenario.materials;
+        document.getElementById('diag-location-input').value = currentScenario.location;
+
+        // Auto urgency setting based on risk level
+        if (currentScenario.level === 'S' || currentScenario.level === 'A') {
+          setUrgency(true);
+        } else {
+          setUrgency(false);
+        }
+
+        showToast(`多模态分析完成：检出 [${currentScenario.levelName}]`, 'success');
+      }, 700);
+    }
+
+    function handleLocalUpload(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        const container = document.getElementById('image-display-container');
+        container.innerHTML = `<img src="${evt.target.result}" class="w-full h-full object-cover">`;
+
+        currentScenario = {
+          id: 'uploaded_' + Date.now(),
+          title: '师生现场拍照上报隐患',
+          level: 'A',
+          levelName: '高危隐患',
+          category: '现场综合安全',
+          confidence: '96.8%',
+          desc: '多模态图像感知：现场画面呈现不规则形变与损伤特征，已触发网格安防复检预警。',
+          group: skillGroups[0] || '综合后勤维修组',
+          materials: '通用安全巡查箱*1、现场防护标牌*2',
+          location: document.getElementById('diag-location-input').value || '校区实地打卡点位',
+          bbox: { top: 20, left: 20, width: 60, height: 60 }
+        };
+
+        triggerAiScan();
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function submitReport() {
+      const loc = document.getElementById('diag-location-input').value.trim() || currentScenario.location;
+      const notes = document.getElementById('diag-notes-input').value.trim();
+      const appointmentVal = document.getElementById('appointment-text-input').value.trim() || (currentIsUrgent ? '立即排障' : '按校内常规工单排期');
+      const code = 'NA-' + new Date().toISOString().slice(0,10).replace(/-/g, '') + '-' + Math.floor(100 + Math.random() * 900);
+
+      const newTicket = {
+        id: code,
+        title: currentScenario.title,
+        level: currentScenario.level,
+        levelName: currentScenario.levelName,
+        category: currentScenario.category,
+        status: 'pending',
+        isUrgent: currentIsUrgent,
+        appointmentTime: appointmentVal,
+        location: loc,
+        time: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
+        group: currentScenario.group,
+        worker: '待指派',
+        materials: currentScenario.materials,
+        desc: currentScenario.desc + (notes ? ` (上报人补充: ${notes})` : ''),
+        scenarioKey: currentScenario.id
+      };
+
+      tickets.unshift(newTicket);
+      document.getElementById('diag-notes-input').value = '';
+
+      renderKanbanBoard();
+      refreshCharts();
+      showToast(`已成功直报并立项！预约时间：${appointmentVal}`, 'success');
+
+      setTimeout(() => {
+        switchView('dashboard');
+      }, 900);
+    }
+
+    function renderKanbanBoard() {
+      const colPending = document.getElementById('col-pending');
+      const colDispatched = document.getElementById('col-dispatched');
+      const colRepairing = document.getElementById('col-repairing');
+      const colClosed = document.getElementById('col-closed');
+
+      colPending.innerHTML = '';
+      colDispatched.innerHTML = '';
+      colRepairing.innerHTML = '';
+      colClosed.innerHTML = '';
+
+      let counts = { pending: 0, dispatched: 0, repairing: 0, closed: 0, sCount: 0 };
+
+      tickets.forEach(t => {
+        counts[t.status]++;
+        if (t.level === 'S' && t.status !== 'closed') counts.sCount++;
+
+        const card = createKanbanCard(t);
+        if (t.status === 'pending') colPending.appendChild(card);
+        else if (t.status === 'dispatched') colDispatched.appendChild(card);
+        else if (t.status === 'repairing') colRepairing.appendChild(card);
+        else if (t.status === 'closed') colClosed.appendChild(card);
+      });
+
+      document.getElementById('badge-count-pending').textContent = counts.pending;
+      document.getElementById('badge-count-dispatched').textContent = counts.dispatched;
+      document.getElementById('badge-count-repairing').textContent = counts.repairing;
+      document.getElementById('badge-count-closed').textContent = counts.closed;
+
+      document.getElementById('kanban-total-items').textContent = tickets.length;
+      document.getElementById('metric-total-count').textContent = tickets.length + 24;
+      document.getElementById('metric-s-count').textContent = counts.sCount;
+
+      const totalActive = counts.pending + counts.dispatched + counts.repairing + counts.closed;
+      const closedRate = totalActive > 0 ? ((counts.closed / totalActive) * 100).toFixed(1) + '%' : '100%';
+      document.getElementById('metric-closed-rate').textContent = closedRate;
+    }
+
+    function createKanbanCard(t) {
+      const card = document.createElement('div');
+      card.className = "bg-slate-900 border border-slate-800 hover:border-slate-700 rounded-xl p-3 space-y-2 cursor-pointer transition shadow-md hover:shadow-cyan-500/5 group text-xs";
+      card.onclick = () => openTicketModal(t.id);
+
+      let badgeCol = "bg-red-500/20 text-red-400 border-red-500/30";
+      if (t.level === 'A') badgeCol = "bg-amber-500/20 text-amber-400 border-amber-500/30";
+      if (t.level === 'B') badgeCol = "bg-yellow-400/20 text-yellow-300 border-yellow-400/30";
+      if (t.level === 'C') badgeCol = "bg-blue-500/20 text-blue-400 border-blue-500/30";
+
+      const urgentPill = t.isUrgent 
+        ? '<span class="text-[9px] px-1.5 py-0.2 rounded font-bold bg-red-600/30 text-red-400 border border-red-500/40">🔥 急</span>'
+        : '<span class="text-[9px] px-1.5 py-0.2 rounded font-mono bg-slate-800 text-slate-400">常</span>';
+
+      card.innerHTML = `
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-1">
+            <span class="font-mono text-[10px] text-slate-400">${t.id}</span>
+            ${urgentPill}
+          </div>
+          <span class="text-[10px] font-bold px-1.5 py-0.2 rounded-full border ${badgeCol}">${t.level}级</span>
+        </div>
+        <div class="font-bold text-slate-100 group-hover:text-cyan-300 transition truncate">${t.title}</div>
+        <div class="text-[11px] text-slate-400 flex items-center gap-1 truncate">
+          <i class="fa-solid fa-location-dot text-[10px] text-cyan-400"></i> ${t.location}
+        </div>
+        <div class="text-[10px] text-amber-400 bg-slate-950/80 px-2 py-0.5 rounded border border-slate-800 truncate">
+          <i class="fa-solid fa-calendar-check mr-1 text-[9px]"></i>${t.appointmentTime || '立即安排'}
+        </div>
+        <div class="pt-1.5 border-t border-slate-800 flex items-center justify-between text-[10px]">
+          <span class="text-slate-400">${t.group}</span>
+          <span class="font-mono text-slate-500">${t.time}</span>
+        </div>
+      `;
+      return card;
+    }
+
+    /* -------------------------------------------------------------
+     * 6. DYNAMIC SKILL GROUPS ENGINE (CUSTOMIZATION)
+     * ------------------------------------------------------------- */
+    function renderSkillGroupControls() {
+      const selectAdd = document.getElementById('new-staff-group');
+      const selectPreset = document.getElementById('new-preset-group');
+      if (selectAdd) {
+        selectAdd.innerHTML = skillGroups.map(g => `<option value="${g}">${g}</option>`).join('');
+      }
+      if (selectPreset) {
+        selectPreset.innerHTML = skillGroups.map(g => `<option value="${g}">${g}</option>`).join('');
+      }
+
+      const tabsContainer = document.getElementById('roster-filter-tabs-container');
+      if (tabsContainer) {
+        let html = `<button onclick="filterPersonnel('ALL')" class="roster-tab-btn px-3 py-1 rounded-lg ${currentRosterFilter === 'ALL' ? 'bg-cyan-500 text-slate-950 font-bold' : 'bg-slate-800 text-slate-400 hover:text-white'}" data-group="ALL">全部在册 (<span id="tab-count-all">${personnel.length}</span>)</button>`;
+        
+        skillGroups.forEach(g => {
+          const isActive = currentRosterFilter === g;
+          html += `<button onclick="filterPersonnel('${g}')" class="roster-tab-btn px-3 py-1 rounded-lg ${isActive ? 'bg-cyan-500 text-slate-950 font-bold' : 'bg-slate-800 text-slate-400 hover:text-white'}" data-group="${g}">${g}</button>`;
+        });
+        tabsContainer.innerHTML = html;
+      }
+
+      const groupContainer = document.getElementById('group-items-container');
+      const countEl = document.getElementById('group-list-count');
+      if (countEl) countEl.textContent = skillGroups.length;
+
+      if (groupContainer) {
+        groupContainer.innerHTML = skillGroups.map((g, idx) => `
+          <div class="flex items-center justify-between p-2 rounded-xl bg-slate-950 border border-slate-800 text-xs">
+            <span class="font-bold text-slate-200 flex items-center gap-2">
+              <span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+              ${g}
+            </span>
+            <div class="flex items-center gap-1">
+              <button onclick="renameGroup(${idx})" class="text-[10px] px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700">重命名</button>
+              <button onclick="deleteGroup(${idx})" class="text-[10px] px-2 py-0.5 rounded bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30">删除</button>
+            </div>
+          </div>
+        `).join('');
+      }
+    }
+
+    function openGroupConfigModal() {
+      renderSkillGroupControls();
+      document.getElementById('group-config-modal').classList.remove('hidden');
+    }
+
+    function closeGroupConfigModal() {
+      document.getElementById('group-config-modal').classList.add('hidden');
+      renderPersonnelTable();
+      renderPresetScenarios();
+    }
+
+    function addNewCustomGroup() {
+      const input = document.getElementById('new-group-name-input');
+      const val = input.value.trim();
+      if (!val) {
+        showToast('请输入班组名称！', 'warning');
+        return;
+      }
+      if (skillGroups.includes(val)) {
+        showToast('该班组已存在！', 'warning');
+        return;
+      }
+      skillGroups.push(val);
+      input.value = '';
+      renderSkillGroupControls();
+      showToast(`已新增班组：${val}`, 'success');
+    }
+
+    function renameGroup(idx) {
+      const oldName = skillGroups[idx];
+      const newName = prompt(`请输入 [${oldName}] 的新名称:`, oldName);
+      if (newName && newName.trim() && newName.trim() !== oldName) {
+        const trimmed = newName.trim();
+        skillGroups[idx] = trimmed;
+        personnel.forEach(p => { if (p.group === oldName) p.group = trimmed; });
+        presetScenarios.forEach(sc => { if (sc.group === oldName) sc.group = trimmed; });
+        tickets.forEach(t => { if (t.group === oldName) t.group = trimmed; });
+
+        renderSkillGroupControls();
+        renderPersonnelTable();
+        renderPresetScenarios();
+        renderKanbanBoard();
+        showToast(`班组已更名为：${trimmed}`, 'success');
+      }
+    }
+
+    function deleteGroup(idx) {
+      if (skillGroups.length <= 1) {
+        showToast('系统至少需保留一个维保班组！', 'warning');
+        return;
+      }
+      const removed = skillGroups.splice(idx, 1)[0];
+      personnel.forEach(p => { if (p.group === removed) p.group = skillGroups[0]; });
+      presetScenarios.forEach(sc => { if (sc.group === removed) sc.group = skillGroups[0]; });
+
+      renderSkillGroupControls();
+      renderPersonnelTable();
+      renderPresetScenarios();
+      showToast(`已删除班组 [${removed}]，原人员已调整`, 'info');
+    }
+
+    function applyGroupTemplate(mode) {
+      if (mode === 'minimal') {
+        skillGroups = ['综合后勤维修组', '校园安全保卫组'];
+        personnel.forEach((p, i) => {
+          p.group = i % 2 === 0 ? '综合后勤维修组' : '校园安全保卫组';
+        });
+        showToast('已切换为【极简二元模式】(适合中小校区/单人兼岗)', 'success');
+      } else {
+        skillGroups = ['强电照明组', '消防安全组', '给排水管道组', '塞外冰雪清运组'];
+        showToast('已切换为【高校精细模式】(专业化分工)', 'success');
+      }
+      renderSkillGroupControls();
+      renderPersonnelTable();
+      renderPresetScenarios();
+    }
+
+    /* -------------------------------------------------------------
+     * 7. DYNAMIC PRESET SCENARIO CARDS ENGINE
+     * ------------------------------------------------------------- */
+    function renderPresetScenarios() {
+      const container = document.getElementById('preset-scenarios-container');
+      if (!container) return;
+
+      container.innerHTML = presetScenarios.map(sc => {
+        let borderCol = "hover:border-red-500/60";
+        let textCol = "text-red-400";
+        if (sc.level === 'A') { borderCol = "hover:border-amber-500/60"; textCol = "text-amber-400"; }
+        if (sc.level === 'B') { borderCol = "hover:border-yellow-400/60"; textCol = "text-yellow-300"; }
+        if (sc.level === 'C') { borderCol = "hover:border-blue-400/60"; textCol = "text-blue-400"; }
+
+        const iconClass = sc.icon || 'fa-triangle-exclamation';
+
+        return `
+          <button onclick="loadScenario('${sc.id}')" class="p-2 rounded-xl bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700 ${borderCol} text-left transition flex flex-col gap-1 active:scale-95 group">
+            <span class="${textCol} font-bold flex items-center gap-1 text-[11px] truncate">
+              <i class="fa-solid ${iconClass}"></i> ${sc.title}
+            </span>
+            <span class="text-[10px] text-slate-400 truncate">${sc.location} · ${sc.levelName}${sc.level}级</span>
+          </button>
+        `;
+      }).join('');
+    }
+
+    function openPresetConfigModal() {
+      renderPresetConfigEditor();
+      document.getElementById('preset-config-modal').classList.remove('hidden');
+    }
+
+    function closePresetConfigModal() {
+      document.getElementById('preset-config-modal').classList.add('hidden');
+      renderPresetScenarios();
+    }
+
+    function renderPresetConfigEditor() {
+      const container = document.getElementById('preset-items-editor-container');
+      if (!container) return;
+
+      container.innerHTML = presetScenarios.map((sc, idx) => `
+        <div class="bg-slate-950 p-2.5 rounded-xl border border-slate-800 text-xs flex items-center justify-between gap-2">
+          <div class="space-y-0.5 truncate flex-1">
+            <div class="flex items-center gap-2">
+              <span class="font-bold text-white">${sc.title}</span>
+              <span class="text-[9px] px-1.5 py-0.2 rounded font-mono bg-cyan-950 text-cyan-400 border border-cyan-800">${sc.level}级</span>
+              <span class="text-[10px] text-slate-400">归属: ${sc.group}</span>
+            </div>
+            <div class="text-[10px] text-slate-400 truncate">${sc.location} | ${sc.desc}</div>
+          </div>
+          <div class="flex items-center gap-1 shrink-0">
+            <button onclick="deletePresetScenario(${idx})" class="text-[10px] px-2 py-1 rounded bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30">删除</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function addNewCustomPreset() {
+      const title = document.getElementById('new-preset-title').value.trim();
+      const loc = document.getElementById('new-preset-loc').value.trim();
+      const level = document.getElementById('new-preset-level').value;
+      const group = document.getElementById('new-preset-group').value;
+      const materials = document.getElementById('new-preset-materials').value.trim() || '便携式抢修工具包*1';
+      const desc = document.getElementById('new-preset-desc').value.trim() || '经现场感知：该点位存在安全风险，建议速派网格师傅到场排障。';
+
+      if (!title || !loc) {
+        showToast('请完整填写标题与发生地点！', 'warning');
+        return;
+      }
+
+      const levelNames = { S: '特急隐患', A: '高危隐患', B: '中危隐患', C: '低危隐患' };
+      const icons = { S: 'fa-bolt', A: 'fa-fire-extinguisher', B: 'fa-snowflake', C: 'fa-faucet-drip' };
+
+      const newPreset = {
+        id: 'custom_' + Date.now(),
+        title: title,
+        level: level,
+        levelName: levelNames[level],
+        category: '校园安全',
+        confidence: '98.5%',
+        desc: desc,
+        group: group,
+        materials: materials,
+        location: loc,
+        icon: icons[level] || 'fa-triangle-exclamation',
+        bbox: { top: 25, left: 25, width: 50, height: 50 },
+        svg: `
+          <svg viewBox="0 0 400 300" class="w-full h-full">
+            <rect width="400" height="300" fill="#0f172a"/>
+            <rect x="50" y="40" width="300" height="220" rx="12" fill="#1e293b" stroke="#334155" stroke-width="3"/>
+            <circle cx="200" cy="140" r="45" fill="#f59e0b" opacity="0.2"/>
+            <polygon points="200,105 165,175 235,175" fill="#f59e0b"/>
+            <text x="200" y="165" font-size="28" font-weight="bold" fill="#000" text-anchor="middle">!</text>
+            <text x="200" y="220" font-size="14" font-weight="bold" fill="#38bdf8" text-anchor="middle">${title}</text>
+          </svg>`
+      };
+
+      presetScenarios.unshift(newPreset);
+      document.getElementById('new-preset-title').value = '';
+      document.getElementById('new-preset-loc').value = '';
+      document.getElementById('new-preset-desc').value = '';
+
+      renderPresetConfigEditor();
+      renderPresetScenarios();
+      showToast(`已新增快捷预设：${title}`, 'success');
+    }
+
+    function deletePresetScenario(idx) {
+      if (presetScenarios.length <= 1) {
+        showToast('请至少保留一个快捷卡片！', 'warning');
+        return;
+      }
+      const removed = presetScenarios.splice(idx, 1)[0];
+      renderPresetConfigEditor();
+      renderPresetScenarios();
+      showToast(`已移除卡片 [${removed.title}]`, 'info');
+    }
+
+    function resetDefaultPresets() {
+      location.reload();
+    }
+
+    function loadScenario(key) {
+      const sc = presetScenarios.find(x => x.id === key) || presetScenarios[0];
+      if (!sc) return;
+      currentScenario = sc;
+
+      const container = document.getElementById('image-display-container');
+      container.innerHTML = sc.svg;
+      triggerAiScan();
+    }
+
+    function createNewQuickTicket() {
+      const chosen = presetScenarios[Math.floor(Math.random() * presetScenarios.length)];
+      const code = 'NA-' + new Date().toISOString().slice(0,10).replace(/-/g, '') + '-' + Math.floor(100 + Math.random() * 900);
+
+      tickets.unshift({
+        id: code,
+        title: chosen.title,
+        level: chosen.level,
+        levelName: chosen.levelName,
+        category: chosen.category,
+        status: 'pending',
+        isUrgent: true,
+        appointmentTime: '立即排障 (网格感知特急)',
+        location: chosen.location,
+        time: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
+        group: chosen.group,
+        worker: '待指派',
+        materials: chosen.materials,
+        desc: chosen.desc,
+        scenarioKey: chosen.id
+      });
+
+      renderKanbanBoard();
+      refreshCharts();
+      showToast(`网格传感器新增紧急预警单 ${code}`, 'info');
+    }
+
+    /* -------------------------------------------------------------
+     * 8. PERSONNEL ROSTER MANAGEMENT & CSV IMPORT/EXPORT
+     * ------------------------------------------------------------- */
+    function openPersonnelModal() {
+      renderPersonnelTable();
+      document.getElementById('personnel-modal').classList.remove('hidden');
+    }
+
+    function closePersonnelModal() {
+      document.getElementById('personnel-modal').classList.add('hidden');
+    }
+
+    function renderPersonnelTable() {
+      const tbody = document.getElementById('personnel-table-body');
+      tbody.innerHTML = '';
+
+      const filtered = currentRosterFilter === 'ALL' 
+        ? personnel 
+        : personnel.filter(p => p.group === currentRosterFilter);
+
+      document.getElementById('tab-count-all').textContent = personnel.length;
+      document.getElementById('btn-roster-count').textContent = personnel.length + '人';
+      document.getElementById('metric-staff-count').textContent = personnel.filter(p => p.status !== 'LEAVE').length;
+
+      filtered.forEach(p => {
+        const tr = document.createElement('tr');
+        tr.className = "hover:bg-slate-900/60 transition";
+
+        let statusBadge = '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">● 空闲待命</span>';
+        if (p.status === 'BUSY') statusBadge = '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30">▲ 外出抢修</span>';
+        if (p.status === 'LEAVE') statusBadge = '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-500/20 text-slate-400 border border-slate-500/30">○ 休假中</span>';
+
+        tr.innerHTML = `
+          <td class="p-3 font-mono text-cyan-400">${p.id}</td>
+          <td class="p-3 font-bold text-white">${p.name}</td>
+          <td class="p-3 text-slate-300">${p.group}</td>
+          <td class="p-3 text-slate-400">${p.grid}</td>
+          <td class="p-3 font-mono text-slate-300">${p.phone}</td>
+          <td class="p-3">${statusBadge}</td>
+          <td class="p-3 text-right">
+            <button onclick="toggleStaffStatus('${p.id}')" class="text-xs px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 transition">
+              切换状态
+            </button>
+            <button onclick="deleteStaff('${p.id}')" class="text-xs px-2 py-1 rounded bg-red-500/10 hover:bg-red-500/20 text-red-400 ml-1 border border-red-500/30 transition">
+              删除
+            </button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function filterPersonnel(groupName) {
+      currentRosterFilter = groupName;
+      document.querySelectorAll('.roster-tab-btn').forEach(btn => {
+        if (btn.dataset.group === groupName) {
+          btn.className = "roster-tab-btn px-3 py-1 rounded-lg bg-cyan-500 text-slate-950 font-bold";
+        } else {
+          btn.className = "roster-tab-btn px-3 py-1 rounded-lg bg-slate-800 text-slate-400 hover:text-white";
+        }
+      });
+      renderPersonnelTable();
+    }
+
+    function toggleStaffStatus(id) {
+      const p = personnel.find(x => x.id === id);
+      if (!p) return;
+      if (p.status === 'IDLE') p.status = 'BUSY';
+      else if (p.status === 'BUSY') p.status = 'LEAVE';
+      else p.status = 'IDLE';
+
+      renderPersonnelTable();
+      showToast(`师傅 ${p.name} 状态已更新为 [${p.status === 'IDLE' ? '空闲' : p.status === 'BUSY' ? '抢修中' : '休假'}]`, 'info');
+    }
+
+    function deleteStaff(id) {
+      personnel = personnel.filter(x => x.id !== id);
+      renderPersonnelTable();
+      showToast('人员记录已移除', 'info');
+    }
+
+    function addNewPersonnelManual() {
+      const name = document.getElementById('new-staff-name').value.trim();
+      const group = document.getElementById('new-staff-group').value;
+      const grid = document.getElementById('new-staff-grid').value.trim();
+      const phone = document.getElementById('new-staff-phone').value.trim();
+
+      if (!name || !grid || !phone) {
+        showToast('请完整填写姓名、负责网格及联系方式！', 'warning');
+        return;
+      }
+
+      const newId = 'WB-' + String(Math.floor(1000 + Math.random() * 9000));
+      personnel.unshift({
+        id: newId,
+        name: name,
+        dept: '后勤保障服务中心',
+        group: group,
+        grid: grid,
+        phone: phone,
+        status: 'IDLE'
+      });
+
+      document.getElementById('new-staff-name').value = '';
+      document.getElementById('new-staff-grid').value = '';
+      document.getElementById('new-staff-phone').value = '';
+
+      renderPersonnelTable();
+      showToast(`已成功录入维保师傅：${name} (${group})`, 'success');
+    }
+
+    function downloadCsvTemplate() {
+      const headers = ["工号", "姓名", "科室部门", "专业技能组", "负责楼宇网格", "联系电话", "当前状态(IDLE/BUSY/LEAVE)"];
+      const rows = [
+        ["WB-0901", "王建平", "后勤动力科", "强电照明组", "实训综合楼", "13804710001", "IDLE"],
+        ["WB-0902", "李德海", "后勤水暖科", "给排水管道组", "教学1-4号楼", "13804710002", "IDLE"],
+        ["WB-0903", "巴特尔", "保卫巡逻队", "消防安全组", "学生公寓A-E区", "13804710003", "IDLE"],
+        ["WB-0904", "赵振国", "校园环卫队", "塞外冰雪清运组", "图书馆与主干道", "13804710004", "IDLE"]
+      ];
+
+      let csvContent = "\uFEFF" + headers.join(",") + "\n";
+      rows.forEach(r => { csvContent += r.join(",") + "\n"; });
+
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.setAttribute("download", "校园后勤网格维保人员导入模板.csv");
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      showToast('已下载标准 CSV 模板！支持直接填入后批量导入', 'success');
+    }
+
+    function handleCsvImport(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(event) {
+        const text = event.target.result;
+        const lines = text.split(/\r?\n/).filter(line => line.trim() !== '');
+
+        if (lines.length <= 1) {
+          showToast('CSV 文件内容为空或格式有误！', 'warning');
+          return;
+        }
+
+        let addedCount = 0;
+        for (let i = 1; i < lines.length; i++) {
+          const cols = lines[i].split(',').map(c => c.trim().replace(/"/g, ''));
+          if (cols.length >= 5 && cols[1]) {
+            personnel.unshift({
+              id: cols[0] || ('WB-' + Math.floor(1000 + Math.random() * 9000)),
+              name: cols[1],
+              dept: cols[2] || '后勤保障处',
+              group: cols[3] || '强电照明组',
+              grid: cols[4] || '全校网格',
+              phone: cols[5] || '138****0000',
+              status: (cols[6] && ['IDLE','BUSY','LEAVE'].includes(cols[6].toUpperCase())) ? cols[6].toUpperCase() : 'IDLE'
+            });
+            addedCount++;
+          }
+        }
+
+        renderPersonnelTable();
+        showToast(`成功批量导入 ${addedCount} 位维保师傅名单！`, 'success');
+        e.target.value = '';
+      };
+      reader.readAsText(file, 'utf-8');
+    }
+
+    function syncExternalDirectory() {
+      const btn = document.getElementById('btn-sync-wecom');
+      btn.innerHTML = `<i class="fa-solid fa-spinner animate-spin"></i><span>正在拉取通讯录...</span>`;
+
+      setTimeout(() => {
+        btn.innerHTML = `<i class="fa-solid fa-arrows-rotate"></i><span>同步企业微信/超星</span>`;
+        personnel.unshift({
+          id: 'WX-8801',
+          name: '高志军(智能引入)',
+          dept: '高校智慧后勤中心',
+          group: '强电照明组',
+          grid: '微电子实训基地',
+          phone: '186****9012',
+          status: 'IDLE'
+        });
+        renderPersonnelTable();
+        showToast('已从企业微信/超星通讯录同步最新排班在岗人员！', 'success');
+      }, 1000);
+    }
+
+    /* -------------------------------------------------------------
+     * 9. SMART DISPATCH ENGINE (Matching Technicians)
+     * ------------------------------------------------------------- */
+    function openDispatchModal(ticketId) {
+      const t = tickets.find(x => x.id === ticketId);
+      if (!t) return;
+      dispatchTargetTicket = t;
+
+      document.getElementById('dispatch-ticket-id').textContent = t.id;
+      document.getElementById('dispatch-ticket-title').textContent = t.title;
+      document.getElementById('dispatch-ticket-level').textContent = `${t.level}级 ${t.levelName}`;
+      document.getElementById('dispatch-ticket-location').textContent = t.location;
+      document.getElementById('dispatch-ticket-appointment').textContent = t.appointmentTime || '立即抢修';
+      document.getElementById('dispatch-recommended-group').textContent = t.group;
+
+      const listContainer = document.getElementById('dispatch-technician-list');
+      listContainer.innerHTML = '';
+
+      const matchingStaff = personnel.filter(p => p.group === t.group && p.status === 'IDLE');
+      const otherStaff = personnel.filter(p => p.group !== t.group && p.status === 'IDLE');
+
+      if (matchingStaff.length === 0 && otherStaff.length === 0) {
+        listContainer.innerHTML = `<div class="p-3 text-center text-xs text-amber-400 bg-amber-950/30 rounded-xl border border-amber-900/60">当前对应班组暂无【空闲】人员，可切换至人员库更改状态或指派跨组协同。</div>`;
+      } else {
+        matchingStaff.forEach(p => {
+          const card = createDispatchStaffCard(p, t, true);
+          listContainer.appendChild(card);
+        });
+
+        otherStaff.slice(0, 2).forEach(p => {
+          const card = createDispatchStaffCard(p, t, false);
+          listContainer.appendChild(card);
+        });
+      }
+
+      document.getElementById('dispatch-modal').classList.remove('hidden');
+    }
+
+    function createDispatchStaffCard(staff, ticket, isBestMatch) {
+      const div = document.createElement('div');
+      div.className = `p-3 rounded-xl border flex items-center justify-between text-xs transition ${
+        isBestMatch 
+          ? 'bg-slate-800/90 border-cyan-500/50 hover:border-cyan-400' 
+          : 'bg-slate-900/70 border-slate-800 opacity-80'
+      }`;
+
+      div.innerHTML = `
+        <div class="space-y-0.5">
+          <div class="flex items-center gap-2">
+            <span class="font-bold text-white text-sm">${staff.name}</span>
+            <span class="text-[10px] px-1.5 py-0.2 rounded font-mono ${isBestMatch ? 'bg-cyan-500/20 text-cyan-300' : 'bg-slate-700 text-slate-300'}">${staff.group}</span>
+            ${isBestMatch ? '<span class="text-[9px] px-1 rounded bg-emerald-500/20 text-emerald-400 font-bold">★ 最佳匹配</span>' : ''}
+          </div>
+          <div class="text-[11px] text-slate-400">负责网格: ${staff.grid} · 电话: <span class="font-mono text-slate-300">${staff.phone}</span></div>
+        </div>
+        <button onclick="executeDispatch('${ticket.id}', '${staff.id}')" class="px-3.5 py-1.5 rounded-lg bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-black text-xs shadow flex items-center gap-1 active:scale-95 transition">
+          <i class="fa-solid fa-paper-plane"></i>
+          <span>一键派工</span>
+        </button>
+      `;
+      return div;
+    }
+
+    function executeDispatch(ticketId, staffId) {
+      const t = tickets.find(x => x.id === ticketId);
+      const s = personnel.find(x => x.id === staffId);
+      if (!t || !s) return;
+
+      t.status = 'dispatched';
+      t.worker = `${s.name} (${s.group} · ${s.phone})`;
+      s.status = 'BUSY';
+
+      renderKanbanBoard();
+      renderPersonnelTable();
+      refreshCharts();
+      closeDispatchModal();
+
+      showToast(`已向 [${s.name} 师傅] 下发派工短信！预约时间：${t.appointmentTime}`, 'success');
+    }
+
+    function closeDispatchModal() {
+      document.getElementById('dispatch-modal').classList.add('hidden');
+    }
+
+    /* -------------------------------------------------------------
+     * 10. TICKET MODAL & FLOW ADVANCEMENT
+     * ------------------------------------------------------------- */
+    function openTicketModal(ticketId) {
+      const t = tickets.find(x => x.id === ticketId);
+      if (!t) return;
+      activeTicket = t;
+
+      document.getElementById('modal-ticket-id').textContent = t.id;
+      document.getElementById('modal-title').textContent = t.title;
+      document.getElementById('modal-time').textContent = '2026-10-30 ' + t.time;
+      document.getElementById('modal-loc').textContent = t.location;
+      document.getElementById('modal-appointment-time').textContent = t.appointmentTime || '立即安排';
+      document.getElementById('modal-eval-desc').textContent = t.desc;
+      document.getElementById('modal-materials').textContent = t.materials;
+      document.getElementById('modal-assigned-worker').innerHTML = `<i class="fa-solid fa-user-gear text-cyan-400"></i> ${t.worker}`;
+
+      const badge = document.getElementById('modal-level-badge');
+      badge.textContent = `${t.level}级 ${t.levelName}`;
+      if (t.level === 'S') badge.className = "text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-500/20 text-red-400 border border-red-500/30";
+      else if (t.level === 'A') badge.className = "text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30";
+      else badge.className = "text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-400 border border-blue-500/30";
+
+      const urgencyBadge = document.getElementById('modal-urgency-badge');
+      if (t.isUrgent) {
+        urgencyBadge.className = "text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-600/30 text-red-300 border border-red-500/40";
+        urgencyBadge.textContent = "🔥 特别着急";
+      } else {
+        urgencyBadge.className = "text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-700/50 text-slate-300 border border-slate-600";
+        urgencyBadge.textContent = "🕒 常规预约";
+      }
+
+      const sc = presetScenarios.find(x => x.id === t.scenarioKey) || currentScenario;
+      document.getElementById('modal-image-preview').innerHTML = sc.svg;
+
+      const statusText = document.getElementById('modal-status-text');
+      const actionArea = document.getElementById('modal-flow-actions');
+
+      if (t.status === 'pending') {
+        statusText.innerHTML = `<span class="text-red-400 font-bold">待研判派单</span>`;
+        actionArea.innerHTML = `
+          <button onclick="closeTicketModal(); openDispatchModal('${t.id}')" class="px-4 py-1.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-black text-xs shadow flex items-center gap-1.5 transition">
+            <i class="fa-solid fa-paper-plane"></i>
+            <span>指派在岗师傅</span>
+          </button>`;
+      } else if (t.status === 'dispatched') {
+        statusText.innerHTML = `<span class="text-amber-400 font-bold">已指派师傅赶赴现场</span>`;
+        actionArea.innerHTML = `
+          <button onclick="advanceTicketStatus('${t.id}', 'repairing')" class="px-4 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs shadow flex items-center gap-1.5 transition">
+            <i class="fa-solid fa-wrench"></i>
+            <span>师傅到场 · 进入抢修</span>
+          </button>`;
+      } else if (t.status === 'repairing') {
+        statusText.innerHTML = `<span class="text-blue-400 font-bold">现场施工抢修中</span>`;
+        actionArea.innerHTML = `
+          <button onclick="advanceTicketStatus('${t.id}', 'closed')" class="px-4 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow flex items-center gap-1.5 transition">
+            <i class="fa-solid fa-check-double"></i>
+            <span>验收合格 · 闭环归档</span>
+          </button>`;
+      } else {
+        statusText.innerHTML = `<span class="text-emerald-400 font-bold">已排除并完成验收闭环</span>`;
+        actionArea.innerHTML = `<span class="text-xs text-emerald-400 font-mono font-bold"><i class="fa-solid fa-shield-check mr-1"></i>工单已安全闭环</span>`;
+      }
+
+      document.getElementById('ticket-modal').classList.remove('hidden');
+    }
+
+    function closeTicketModal() {
+      document.getElementById('ticket-modal').classList.add('hidden');
+    }
+
+    function advanceTicketStatus(id, nextStatus) {
+      const t = tickets.find(x => x.id === id);
+      if (!t) return;
+      t.status = nextStatus;
+
+      renderKanbanBoard();
+      refreshCharts();
+      openTicketModal(id);
+
+      if (nextStatus === 'repairing') {
+        showToast(`工单 ${id} 师傅已签到并展开施工抢修`, 'info');
+      } else if (nextStatus === 'closed') {
+        showToast(`工单 ${id} 验收合格，已闭环归档！`, 'success');
+      }
+    }
+
+    function copyTicketNumber() {
+      if (!activeTicket) return;
+      const dummy = document.createElement("input");
+      document.body.appendChild(dummy);
+      dummy.value = activeTicket.id;
+      dummy.select();
+      document.execCommand("copy");
+      document.body.removeChild(dummy);
+      showToast(`工单号已复制到剪贴板: ${activeTicket.id}`, 'info');
+    }
+
+    /* -------------------------------------------------------------
+     * 11. CHARTS & DATA TELEMETRY
+     * ------------------------------------------------------------- */
+    let chartPieInstance = null;
+    let chartBarInstance = null;
+
+    function initCharts() {
+      const ctxPie = document.getElementById('chart-severity-pie').getContext('2d');
+      chartPieInstance = new Chart(ctxPie, {
+        type: 'doughnut',
+        data: {
+          labels: ['特急S级', '高危A级', '中危B级', '低危C级'],
+          datasets: [{
+            data: [2, 5, 11, 10],
+            backgroundColor: ['#ef4444', '#f59e0b', '#facc15', '#38bdf8'],
+            borderWidth: 0
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { position: 'right', labels: { color: '#94a3b8', font: { size: 10 } } } },
+          cutout: '72%'
+        }
+      });
+
+      const ctxBar = document.getElementById('chart-category-bar').getContext('2d');
+      chartBarInstance = new Chart(ctxBar, {
+        type: 'bar',
+        data: {
+          labels: ['用电安全', '消防安全', '环境冰雪', '设施供水', '门禁安防'],
+          datasets: [{
+            label: '检出隐患件数',
+            data: [8, 12, 10, 6, 4],
+            backgroundColor: '#00f2fe',
+            borderRadius: 6
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { ticks: { color: '#94a3b8', font: { size: 10 } }, grid: { display: false } },
+            y: { ticks: { color: '#94a3b8', font: { size: 10 } }, grid: { color: '#1e293b' } }
+          }
+        }
+      });
+    }
+
+    function refreshCharts() {
+      if (!chartPieInstance || !chartBarInstance) return;
+
+      let counts = { S: 0, A: 0, B: 0, C: 0 };
+      tickets.forEach(t => { if (counts[t.level] !== undefined) counts[t.level]++; });
+
+      chartPieInstance.data.datasets[0].data = [counts.S + 2, counts.A + 4, counts.B + 9, counts.C + 8];
+      chartPieInstance.update();
+
+      document.getElementById('stat-red').textContent = counts.S + 2;
+      document.getElementById('stat-orange').textContent = counts.A + 4;
+      document.getElementById('stat-yellow').textContent = counts.B + 9;
+      document.getElementById('stat-blue').textContent = counts.C + 8;
+    }
+
+    function refreshDataState() {
+      refreshCharts();
+      renderKanbanBoard();
+      showToast('大屏遥测与调度状态已重新校准', 'info');
+    }
+
+    /* -------------------------------------------------------------
+     * 12. TOAST SYSTEM
+     * ------------------------------------------------------------- */
+    function showToast(msg, type = 'info') {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+
+      let icon = 'fa-circle-info text-cyan-400';
+      if (type === 'success') icon = 'fa-circle-check text-emerald-400';
+      if (type === 'warning') icon = 'fa-triangle-exclamation text-amber-400';
+
+      toast.className = "flex items-center gap-2.5 px-4 py-2.5 rounded-xl bg-slate-900/95 border border-slate-700 shadow-2xl text-xs text-slate-200 pointer-events-auto transform translate-y-2 opacity-0 transition-all duration-300";
+      toast.innerHTML = `<i class="fa-solid ${icon}"></i><span>${msg}</span>`;
+
+      container.appendChild(toast);
+
+      setTimeout(() => { toast.classList.remove('translate-y-2', 'opacity-0'); }, 10);
+      setTimeout(() => {
+        toast.classList.add('translate-y-2', 'opacity-0');
+        setTimeout(() => toast.remove(), 300);
+      }, 3500);
+    }
+  </script>
+</body>
+</html>
