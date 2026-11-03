@@ -107,7 +107,7 @@
         </div>
       </div>
 
-      <!-- 位置与描述 -->
+      <!-- 位置 -->
       <div>
         <label class="block text-xs font-bold text-slate-700 mb-1.5">隐患具体位置 <span class="text-red-500">*</span></label>
         <div class="relative">
@@ -116,6 +116,26 @@
         </div>
       </div>
 
+      <!-- 期望维修时间 / 预约上门时段 -->
+      <div>
+        <label class="block text-xs font-bold text-slate-700 mb-1.5 flex justify-between">
+          <span>期望维修时间 / 预约时段</span>
+          <span class="text-slate-400 font-normal text-[11px]">方便师傅上门排障</span>
+        </label>
+        <div class="relative mb-1.5">
+          <i class="fa-regular fa-calendar-check absolute left-3 top-3 text-slate-400 text-xs"></i>
+          <input type="text" id="hazard-repair-time" placeholder="请选择或输入期望维修时间（如：尽快处置、今天下午）" value="立即紧急处置（越快越好）" class="w-full text-xs pl-8 pr-3 py-2.5 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
+        </div>
+        <!-- 快捷选择时段按钮 -->
+        <div class="flex flex-wrap gap-1">
+          <button type="button" onclick="setRepairTime('立即紧急处置（越快越好）')" class="text-[10px] bg-red-50 hover:bg-red-100 text-red-600 px-2 py-0.5 rounded border border-red-200 transition-colors">🔥 立即紧急排障</button>
+          <button type="button" onclick="setRepairTime('今天下午 14:00 - 17:30')" class="text-[10px] bg-slate-50 hover:bg-blue-50 hover:text-blue-600 text-slate-600 px-2 py-0.5 rounded border border-slate-200 transition-colors">今天下午</button>
+          <button type="button" onclick="setRepairTime('明天上午 08:30 - 11:30')" class="text-[10px] bg-slate-50 hover:bg-blue-50 hover:text-blue-600 text-slate-600 px-2 py-0.5 rounded border border-slate-200 transition-colors">明天上午</button>
+          <button type="button" onclick="setRepairTime('周末集中检修')" class="text-[10px] bg-slate-50 hover:bg-blue-50 hover:text-blue-600 text-slate-600 px-2 py-0.5 rounded border border-slate-200 transition-colors">周末检修</button>
+        </div>
+      </div>
+
+      <!-- 表象描述 -->
       <div>
         <label class="block text-xs font-bold text-slate-700 mb-1.5">现场表象描述（选填）</label>
         <textarea id="hazard-desc" rows="2" placeholder="电线破损有焦味、管道滋滋漏水、暗冰易滑倒等现象..." class="w-full text-xs p-2.5 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"></textarea>
@@ -298,7 +318,7 @@
       </div>
       <div class="p-3 bg-slate-800 text-[11px] text-slate-400 flex justify-between items-center">
         <span id="modal-image-desc">现场真实快照</span>
-        <span class="text-emerald-400"><i class="fa-solid fa-check"></i> 多模态 AI 已完成安全特征特征提取</span>
+        <span class="text-emerald-400"><i class="fa-solid fa-check"></i> 多模态 AI 已完成安全特征提取</span>
       </div>
     </div>
   </div>
@@ -320,6 +340,7 @@
         <div class="bg-slate-50 p-3 rounded-lg border border-slate-200 space-y-1">
           <div class="text-slate-500">隐患位置: <strong id="modal-loc" class="text-slate-800">--</strong></div>
           <div class="text-slate-500">危险定级: <strong id="modal-grade" class="text-red-600">--</strong></div>
+          <div class="text-slate-500">期望维修时间: <strong id="modal-req-time" class="text-blue-600">--</strong></div>
           <div class="text-slate-500">推荐耗材: <span id="modal-parts" class="text-slate-700 font-mono">--</span></div>
         </div>
 
@@ -345,7 +366,6 @@
 
   <!-- ================= 底层数据及交互引擎脚本 ================= -->
   <script>
-    // 0. 高可靠高清真实场景降级图床（防止本地图片断连）
     const FALLBACK_SCENE_IMAGES = {
       electric: "https://images.unsplash.com/photo-1544724569-5f546fd6f2b5?auto=format&fit=crop&w=800&q=80",
       water: "https://images.unsplash.com/photo-1585704032915-c3400ca199e7?auto=format&fit=crop&w=800&q=80",
@@ -353,13 +373,11 @@
       fire: "https://images.unsplash.com/photo-1584483766114-2cea6facdf57?auto=format&fit=crop&w=800&q=80"
     };
 
-    // 1. 初始化核心状态与 LocalStorage 持久化存储
     let currentActiveView = 'mobile';
     let currentFilter = 'ALL';
     let activeDispatchOrderId = null;
     let selectedImageBase64 = null;
 
-    // 跨标签页秒级同步通道（同一电脑左边手机拍、右边大屏秒出）
     let syncChannel = null;
     try {
       syncChannel = new BroadcastChannel('campus_safety_channel');
@@ -382,7 +400,6 @@
       console.warn("BroadcastChannel not supported", e);
     }
 
-    // 预设维保师傅数据
     let workers = [
       { id: 101, name: "张建国", team: "强电照明组", phone: "138****5021", status: "空闲", busyTask: null },
       { id: 102, name: "王海山", team: "强电照明组", phone: "139****1124", status: "空闲", busyTask: null },
@@ -392,7 +409,6 @@
       { id: 106, name: "孙师傅", team: "综合物业组", phone: "131****4490", status: "空闲", busyTask: null }
     ];
 
-    // 工单库种子数据
     const INITIAL_ORDERS = [
       {
         id: "ZA-26101",
@@ -402,10 +418,11 @@
         category: "用电安全",
         team: "强电照明组",
         sla: "15分钟内",
+        repairTimeReq: "立即紧急处置（越快越好）",
         parts: ["380V低压断路保护开关", "高压阻燃绝缘套管(1米)", "3M绝缘胶带"],
         status: "PENDING",
         assignedWorker: null,
-        timestamp: "2026-10-30 14:20",
+        timestamp: "2026-11-03 14:20",
         photoUrl: FALLBACK_SCENE_IMAGES.electric
       },
       {
@@ -416,10 +433,11 @@
         category: "塞外冰雪防滑",
         team: "冰雪清运组",
         sla: "2小时内",
+        repairTimeReq: "今天下午 14:00 - 17:30",
         parts: ["环保型融雪盐", "除雪破冰铲", "防滑警戒提示牌*2"],
         status: "PROCESSING",
         assignedWorker: "刘北峰",
-        timestamp: "2026-10-30 14:05",
+        timestamp: "2026-11-03 14:05",
         photoUrl: FALLBACK_SCENE_IMAGES.ice
       },
       {
@@ -430,15 +448,15 @@
         category: "消防安全",
         team: "消防安保组",
         sla: "30分钟内",
+        repairTimeReq: "立即紧急处置（越快越好）",
         parts: ["现场杂物清运推车", "通道警示标识"],
         status: "RESOLVED",
         assignedWorker: "赵保卫",
-        timestamp: "2026-10-30 12:40",
+        timestamp: "2026-11-03 12:40",
         photoUrl: FALLBACK_SCENE_IMAGES.fire
       }
     ];
 
-    // 从本地缓存载入工单，保持会话连贯
     let orders = [];
     try {
       const stored = localStorage.getItem('CAMPUS_SAFETY_ORDERS_V2');
@@ -460,7 +478,7 @@
       }
     }
 
-    // ================= 2. 核心路由与分流逻辑 =================
+    // ================= 2. 路由与时段辅助 =================
     window.addEventListener('DOMContentLoaded', () => {
       const urlParams = new URLSearchParams(window.location.search);
       const viewParam = urlParams.get('view');
@@ -485,6 +503,11 @@
       renderAll();
     });
 
+    function setRepairTime(val) {
+      const input = document.getElementById('hazard-repair-time');
+      if (input) input.value = val;
+    }
+
     function switchView(view) {
       currentActiveView = view;
       const mobileView = document.getElementById('mobile-view');
@@ -505,9 +528,7 @@
       }
     }
 
-    // ================= 3. 图像处理与多模态研判（核心修复大屏看图） =================
-    
-    // 监听本地文件选择并轻量压缩，保证大屏秒开
+    // ================= 3. 图像处理与多模态研判 =================
     function handleFileSelect(event) {
       const file = event.target.files[0];
       if (file) {
@@ -515,7 +536,6 @@
         reader.onload = function(e) {
           const img = new Image();
           img.onload = function() {
-            // 利用 Canvas 离线压缩，防止大图撑爆大屏内存
             const canvas = document.createElement('canvas');
             const MAX_WIDTH = 640;
             const scaleSize = MAX_WIDTH / img.width;
@@ -556,10 +576,10 @@
       wrapper.classList.remove('hidden');
     }
 
-    // 多模态 AI 智能体研判与分发调度
     function runAIDiagnosisAndSubmit() {
       const loc = document.getElementById('hazard-location').value.trim();
       const desc = document.getElementById('hazard-desc').value.trim();
+      const repairTime = document.getElementById('hazard-repair-time').value.trim() || "尽快处置";
 
       if (!loc) {
         alert("请先填写隐患具体位置（如：实训楼302或宿舍楼西侧）！");
@@ -616,7 +636,6 @@
 
         renderAIResultPanel(diagnosis);
 
-        // 核心图床策略：有本地图用本地图，无本地图或异端访问用云端高清图，绝对不破图
         const finalPhoto = selectedImageBase64 || diagnosis.fallbackImg;
 
         const newOrder = {
@@ -627,6 +646,7 @@
           category: diagnosis.category,
           team: diagnosis.team,
           sla: diagnosis.sla,
+          repairTimeReq: repairTime,
           parts: diagnosis.parts,
           status: "PENDING",
           assignedWorker: null,
@@ -634,12 +654,10 @@
           photoUrl: finalPhoto
         };
 
-        // 存入当前会话
         orders.unshift(newOrder);
         saveOrdersToStorage();
         renderAll();
 
-        // 广播给其他大屏窗口
         if (syncChannel) {
           syncChannel.postMessage({ type: 'NEW_ORDER', order: newOrder });
         }
@@ -708,13 +726,11 @@
           'RESOLVED': '<span class="text-emerald-600 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded text-[11px] font-bold">已闭环排障</span>'
         };
 
-        // 图片安全回退机制
         const safeImgUrl = order.photoUrl || FALLBACK_SCENE_IMAGES.electric;
 
         return `
           <div class="p-3.5 rounded-xl border ${order.grade === 'S' && order.status === 'PENDING' ? 'border-red-300 bg-red-50/20' : 'border-slate-200 bg-white'} shadow-sm hover:shadow transition-all flex flex-col md:flex-row gap-3 items-start md:items-center justify-between ${idx === 0 ? 'animate-new-order' : ''}">
             <div class="flex items-start gap-3 w-full md:w-auto">
-              <!-- 点击图片查看高清大图 -->
               <div class="relative group cursor-pointer flex-shrink-0" onclick="openImageModal('${safeImgUrl}', '${order.location}')">
                 <img src="${safeImgUrl}" alt="隐患现场" class="w-16 h-16 rounded-lg object-cover border border-slate-200 group-hover:opacity-90 transition-opacity">
                 <span class="absolute inset-0 bg-black/30 rounded-lg flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity text-[11px]">
@@ -730,7 +746,8 @@
                 </div>
                 <p class="text-xs text-slate-600 line-clamp-2 md:line-clamp-1">${order.desc}</p>
                 <div class="text-[11px] text-slate-400 flex flex-wrap items-center gap-x-3 gap-y-1">
-                  <span><i class="fa-regular fa-clock"></i> ${order.timestamp}</span>
+                  <span><i class="fa-regular fa-clock"></i> 上报: ${order.timestamp}</span>
+                  <span class="text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded font-medium"><i class="fa-regular fa-calendar-check"></i> 期望: ${order.repairTimeReq || '尽快'}</span>
                   <span>负责班组: <strong class="text-slate-700">${order.team}</strong></span>
                   ${order.assignedWorker ? `<span class="text-blue-600 font-semibold"><i class="fa-solid fa-user-check"></i> ${order.assignedWorker} 师傅</span>` : ''}
                 </div>
@@ -794,7 +811,7 @@
               <span class="w-2 h-2 rounded-full ${o.grade === 'S' ? 'bg-red-500' : (o.grade === 'A' ? 'bg-orange-500' : 'bg-blue-500')}"></span>
               ${o.location}
             </div>
-            <div class="text-[11px] text-slate-400">${o.timestamp} · 耗材: ${o.parts[0]}</div>
+            <div class="text-[11px] text-slate-400">期望: ${o.repairTimeReq || '尽快'} · 耗材: ${o.parts[0]}</div>
           </div>
           <div>
             <span class="text-[10px] font-semibold px-2 py-0.5 rounded ${o.status === 'RESOLVED' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}">
@@ -809,7 +826,6 @@
     function openImageModal(imgUrl, title) {
       document.getElementById('modal-image-src').src = imgUrl;
       document.getElementById('modal-image-title').innerHTML = `<i class="fa-regular fa-image text-blue-400"></i> ${title || '现场取证高清大图'}`;
-      document.getElementById('modal-image-modal', 'image-modal');
       document.getElementById('image-modal').classList.remove('hidden');
     }
 
@@ -841,6 +857,7 @@
       document.getElementById('modal-order-subtitle').textContent = `工单流水编号: #${order.id}`;
       document.getElementById('modal-loc').textContent = order.location;
       document.getElementById('modal-grade').textContent = `${order.grade} 级 (${order.sla})`;
+      document.getElementById('modal-req-time').textContent = order.repairTimeReq || '尽快处置';
       document.getElementById('modal-parts').textContent = order.parts.join('、');
 
       const select = document.getElementById('modal-worker-select');
@@ -876,7 +893,7 @@
           syncChannel.postMessage({ type: 'UPDATE_STATUS', orderId: order.id, status: 'PROCESSING', assignedWorker: selectedWorker });
         }
 
-        alert(`已成功向 [${selectedWorker}] 师傅下发实时短信及企业微信通知！\\n附带维保定额备件: ${order.parts.join('、')}`);
+        alert(`已成功向 [${selectedWorker}] 师傅下发实时短信及企业微信通知！\\n期望上门时段: ${order.repairTimeReq || '尽快'}\\n附带备件: ${order.parts.join('、')}`);
         closeDispatchModal();
         renderAll();
       }
