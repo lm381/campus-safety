@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>智安北疆 - 校园安全隐患智能质检与调度系统</title>
+  <title>智安筑卫 - 校园安全隐患智能质检与调度系统</title>
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- FontAwesome 图标库 -->
@@ -49,9 +49,9 @@
         </div>
         <div>
           <h1 class="font-bold text-base md:text-lg tracking-wide flex items-center gap-2">
-            智安北疆 <span class="text-xs bg-blue-500/30 text-blue-300 border border-blue-400/40 px-2 py-0.5 rounded-full font-normal">多模态AI安全管家</span>
+            智安筑卫 <span class="text-xs bg-blue-500/30 text-blue-300 border border-blue-400/40 px-2 py-0.5 rounded-full font-normal">多模态AI安全管家</span>
           </h1>
-          <p class="text-xs text-slate-400 hidden sm:block">校园安全隐患现场质检 · 风险定级 · 网格化柔性调度闭环平台</p>
+          <p class="text-xs text-slate-400 hidden sm:block">数字孪生式校园安全质检 · 风险定级 · 网格化柔性调度闭环平台</p>
         </div>
       </div>
 
@@ -72,7 +72,7 @@
     <!-- 移动端顶部状态卡片 -->
     <div class="bg-gradient-to-r from-blue-600 to-indigo-700 rounded-2xl p-5 text-white shadow-lg mb-4">
       <div class="flex items-center justify-between mb-2">
-        <span class="text-xs bg-white/20 backdrop-blur-sm px-2.5 py-1 rounded-full font-medium">北疆智检 · 极速直达</span>
+        <span class="text-xs bg-white/20 backdrop-blur-sm px-2.5 py-1 rounded-full font-medium">筑卫智检 · 极速直达</span>
         <span id="mobile-online-status" class="text-xs flex items-center gap-1 text-emerald-300">
           <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span> AI大脑在线
         </span>
@@ -258,7 +258,7 @@
             <p class="text-xs text-slate-400 mt-0.5">点击工单照片可放大查看现场取证高清大图</p>
           </div>
 
-          <!-- 核心控制区：醒目的分类导入手机号入口 + 工单筛选 -->
+          <!-- 核心控制区：分类管理手机号 + 工单筛选 -->
           <div class="flex items-center gap-2 flex-wrap">
             <button onclick="openPhoneManagerModal()" class="text-xs px-3 py-1.5 rounded-lg bg-pink-600 hover:bg-pink-700 text-white font-bold flex items-center gap-1.5 shadow-sm transition-all animate-pulse">
               <i class="fa-solid fa-address-book"></i> 分类管理手机号
@@ -1007,7 +1007,6 @@
       renderOrders();
     }
 
-    // 打开派工弹窗：支持自主选择通知楼栋分类与自主勾选号码
     function openDispatchModal(orderId) {
       activeDispatchOrderId = orderId;
       const order = orders.find(o => o.id === orderId);
@@ -1021,14 +1020,12 @@
       document.getElementById('modal-req-time').textContent = targetTime;
       document.getElementById('modal-parts').textContent = order.parts.join('、');
 
-      // 班组技工下拉
       const selectWorker = document.getElementById('modal-worker-select');
       selectWorker.innerHTML = workers.map(w => {
         const isMatched = w.team === order.team;
         return `<option value="${w.name}">${w.name} - ${w.team} [${w.status}] ${isMatched ? '★推荐对口' : ''}</option>`;
       }).join('');
 
-      // 智能匹配或自由选择通知分类
       const buildings = Object.keys(buildingPhoneBook);
       let matchedBuilding = buildings[0] || "南区7号女宿";
       for (let b of buildings) {
@@ -1039,20 +1036,17 @@
       }
       activeDormBuilding = matchedBuilding;
 
-      // 渲染派工弹窗中的分类选择下拉框
       const groupSelect = document.getElementById('dispatch-group-select');
       groupSelect.innerHTML = buildings.map(b => `
         <option value="${b}" ${b === activeDormBuilding ? 'selected' : ''}>${b} (${(buildingPhoneBook[b] || []).length} 个录入号码)</option>
       `).join('');
 
-      // 渲染该分类下的可勾选号码
       renderDispatchPhoneCheckboxes(activeDormBuilding);
       updateDispatchSmsPreview(activeDormBuilding, targetTime);
 
       document.getElementById('dispatch-modal').classList.remove('hidden');
     }
 
-    // 切换派工弹窗中的目标通知分类
     function onDispatchGroupChange(groupName) {
       activeDormBuilding = groupName;
       const order = orders.find(o => o.id === activeDispatchOrderId);
@@ -1061,7 +1055,6 @@
       updateDispatchSmsPreview(groupName, targetTime);
     }
 
-    // 渲染派工弹窗中用于自由勾选的号码列表
     function renderDispatchPhoneCheckboxes(groupName) {
       const container = document.getElementById('dispatch-phone-checkboxes');
       const phones = buildingPhoneBook[groupName] || [];
@@ -1081,23 +1074,20 @@
       updateSelectedPhoneCount();
     }
 
-    // 更新选中的号码计数
     function updateSelectedPhoneCount() {
       const checked = document.querySelectorAll('.dispatch-phone-chk:checked');
       document.getElementById('selected-phone-count').textContent = checked.length;
     }
 
-    // 全选 / 全不选
     function selectAllDispatchPhones(status) {
       const chks = document.querySelectorAll('.dispatch-phone-chk');
       chks.forEach(c => c.checked = status);
       updateSelectedPhoneCount();
     }
 
-    // 动态更新短信预览文案
     function updateDispatchSmsPreview(buildingName, targetTime) {
       document.getElementById('sms-preview-content').innerHTML = `
-        【智安北疆·后勤关怀】<br>
+        【智安筑卫·后勤关怀】<br>
         同学你好，你所在的【${buildingName}】预计将于【${targetTime}】排障检修。请各位同学留意个人着装与室内隐私，随手拉好床帘或门帘。如有异样请找楼下值班人员
       `;
     }
@@ -1107,7 +1097,6 @@
       activeDispatchOrderId = null;
     }
 
-    // 真正触发短信发送的底层函数
     async function executeRealSmsDispatch(recipients, smsText, customApiUrl) {
       if (!recipients || recipients.length === 0) {
         alert("未勾选任何手机号码，请先在上方勾选至少一个接收人！");
@@ -1142,22 +1131,19 @@
       return true;
     }
 
-    // 后台确认派工触发逻辑：向勾选的手机号真实触发
     async function confirmDispatch() {
       if (!activeDispatchOrderId) return;
       const selectedWorker = document.getElementById('modal-worker-select').value;
       const order = orders.find(o => o.id === activeDispatchOrderId);
       if (order) {
-        // 获取所有被勾选的电话号码
         const checkedElements = document.querySelectorAll('.dispatch-phone-chk:checked');
         const recipients = Array.from(checkedElements).map(el => el.value);
 
         const chosenBuilding = document.getElementById('dispatch-group-select').value || activeDormBuilding;
         const targetTime = order.repairTimeReq || '今天 15:30-16:30';
-        const smsContent = `【智安北疆·后勤关怀】同学你好，你所在的【${chosenBuilding}】预计将于【${targetTime}】排障检修。请各位同学留意个人着装与室内隐私，随手拉好床帘或门帘。如有异样请找楼下值班人员`;
+        const smsContent = `【智安筑卫·后勤关怀】同学你好，你所在的【${chosenBuilding}】预计将于【${targetTime}】排障检修。请各位同学留意个人着装与室内隐私，随手拉好床帘或门帘。如有异样请找楼下值班人员`;
         const apiUrl = document.getElementById('sms-api-url') ? document.getElementById('sms-api-url').value.trim() : '';
 
-        // 如果用户勾选了号码，执行真实短信分发
         if (recipients.length > 0) {
           const sendOk = await executeRealSmsDispatch(recipients, smsContent, apiUrl);
           if (!sendOk) return;
@@ -1346,7 +1332,6 @@
     function saveAndClosePhoneModal() {
       savePhoneBookToStorage();
       closePhoneManagerModal();
-      // 如果当前正处于派工弹窗中，立即刷新派工弹窗的分类与号码
       if (activeDispatchOrderId) {
         onDispatchGroupChange(activeDormBuilding);
       }
