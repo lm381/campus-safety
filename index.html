@@ -88,7 +88,7 @@
       <div>
         <label class="block text-xs font-bold text-slate-700 mb-2 flex justify-between">
           <span>现场隐患快照 / 取证照 <span class="text-red-500">*</span></span>
-          <span class="text-blue-600 font-normal cursor-pointer hover:underline text-[11px]" onclick="usePresetImage('electric')">示例：配电箱漏电异味</span>
+          <span class="text-blue-600 font-normal cursor-pointer hover:underline text-[11px]" onclick="usePresetImage('water')">示例：宿舍水阀漏水</span>
         </label>
         
         <div id="dropzone" onclick="document.getElementById('file-input').click()" class="border-2 border-dashed border-slate-300 hover:border-blue-500 rounded-xl p-4 text-center cursor-pointer transition-all bg-slate-50 relative overflow-hidden group min-h-[140px] flex items-center justify-center">
@@ -112,7 +112,7 @@
         <label class="block text-xs font-bold text-slate-700 mb-1.5">隐患具体位置 <span class="text-red-500">*</span></label>
         <div class="relative">
           <i class="fa-solid fa-location-dot absolute left-3 top-3 text-slate-400 text-xs"></i>
-          <input type="text" id="hazard-location" placeholder="例如：实训楼 B座 302 实训机房总控柜" class="w-full text-xs pl-8 pr-3 py-2.5 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
+          <input type="text" id="hazard-location" placeholder="例如：南区7号女宿 308宿舍热水阀门" class="w-full text-xs pl-8 pr-3 py-2.5 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
         </div>
       </div>
 
@@ -124,14 +124,14 @@
         </label>
         <div class="relative mb-1.5">
           <i class="fa-regular fa-calendar-check absolute left-3 top-3 text-slate-400 text-xs"></i>
-          <input type="text" id="hazard-repair-time" placeholder="请选择或输入期望维修时间（如：尽快处置、今天下午）" value="立即紧急处置（越快越好）" class="w-full text-xs pl-8 pr-3 py-2.5 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
+          <input type="text" id="hazard-repair-time" placeholder="请选择或输入期望维修时间（如：今天 15:30-16:30）" value="今天 15:30-16:30" class="w-full text-xs pl-8 pr-3 py-2.5 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
         </div>
         <!-- 快捷选择时段按钮 -->
         <div class="flex flex-wrap gap-1">
+          <button type="button" onclick="setRepairTime('今天 15:30-16:30')" class="text-[10px] bg-purple-50 hover:bg-purple-100 text-purple-700 px-2 py-0.5 rounded border border-purple-200 transition-colors">今天 15:30-16:30</button>
           <button type="button" onclick="setRepairTime('立即紧急处置（越快越好）')" class="text-[10px] bg-red-50 hover:bg-red-100 text-red-600 px-2 py-0.5 rounded border border-red-200 transition-colors">🔥 立即紧急排障</button>
           <button type="button" onclick="setRepairTime('今天下午 14:00 - 17:30')" class="text-[10px] bg-slate-50 hover:bg-blue-50 hover:text-blue-600 text-slate-600 px-2 py-0.5 rounded border border-slate-200 transition-colors">今天下午</button>
           <button type="button" onclick="setRepairTime('明天上午 08:30 - 11:30')" class="text-[10px] bg-slate-50 hover:bg-blue-50 hover:text-blue-600 text-slate-600 px-2 py-0.5 rounded border border-slate-200 transition-colors">明天上午</button>
-          <button type="button" onclick="setRepairTime('周末集中检修')" class="text-[10px] bg-slate-50 hover:bg-blue-50 hover:text-blue-600 text-slate-600 px-2 py-0.5 rounded border border-slate-200 transition-colors">周末检修</button>
         </div>
       </div>
 
@@ -143,9 +143,9 @@
 
       <!-- 快捷标签推荐 -->
       <div class="flex flex-wrap gap-1.5">
-        <button type="button" onclick="quickFill('实训楼机房', '配电箱绝缘套管破损，伴随轻微打火异味', 'electric')" class="text-[11px] bg-slate-100 hover:bg-blue-50 hover:text-blue-600 text-slate-600 px-2.5 py-1 rounded-full border border-slate-200 transition-colors">⚡ 机房配电打火</button>
-        <button type="button" onclick="quickFill('1号教学楼西侧暖气井', '管道接头爆裂喷水，走廊地面严重积水', 'water')" class="text-[11px] bg-slate-100 hover:bg-blue-50 hover:text-blue-600 text-slate-600 px-2.5 py-1 rounded-full border border-slate-200 transition-colors">💧 水管爆裂喷水</button>
-        <button type="button" onclick="quickFill('图书馆大门正北台阶', '化雪融水形成大面积暗冰，极易滑倒', 'ice')" class="text-[11px] bg-slate-100 hover:bg-blue-50 hover:text-blue-600 text-slate-600 px-2.5 py-1 rounded-full border border-slate-200 transition-colors">❄️ 台阶道路暗冰</button>
+        <button type="button" onclick="quickFill('南区7号女宿 308宿舍', '卫生间进水软管破裂漏水，需要更换', 'water', '今天 15:30-16:30')" class="text-[11px] bg-pink-50 hover:bg-pink-100 text-pink-700 px-2.5 py-1 rounded-full border border-pink-200 transition-colors">🌸 女宿水管漏水(隐私联动)</button>
+        <button type="button" onclick="quickFill('实训楼机房 302', '配电箱绝缘套管破损，伴随轻微打火异味', 'electric', '立即紧急处置（越快越好）')" class="text-[11px] bg-slate-100 hover:bg-blue-50 hover:text-blue-600 text-slate-600 px-2.5 py-1 rounded-full border border-slate-200 transition-colors">⚡ 机房配电打火</button>
+        <button type="button" onclick="quickFill('图书馆大门正北台阶', '化雪融水形成大面积暗冰，极易滑倒', 'ice', '今天下午 14:00 - 17:30')" class="text-[11px] bg-slate-100 hover:bg-blue-50 hover:text-blue-600 text-slate-600 px-2.5 py-1 rounded-full border border-slate-200 transition-colors">❄️ 台阶道路暗冰</button>
       </div>
 
       <!-- 提交报修按钮 -->
@@ -289,14 +289,14 @@
           <!-- 动态加载技工卡片 -->
         </div>
 
-        <!-- 规范知识库挂载说明 -->
+        <!-- 规范知识库与人文关怀说明 -->
         <div class="p-3 bg-blue-50/60 rounded-xl border border-blue-100 text-xs space-y-1.5">
           <div class="font-bold text-blue-900 flex justify-between items-center">
-            <span>《知识库数据底座支撑》</span>
-            <span class="text-[10px] text-emerald-600 bg-emerald-100 px-1.5 py-0.5 rounded font-bold">已挂载</span>
+            <span>《知识库与关怀体系》</span>
+            <span class="text-[10px] text-pink-600 bg-pink-100 px-1.5 py-0.5 rounded font-bold">女宿隐私联防</span>
           </div>
           <p class="text-[11px] text-slate-600 leading-relaxed">
-            派工耗材自动匹配《校园后勤安全隐患巡查与分级处置规范》和《备件定额标准》，实现全流程标准化处置。
+            除《分级处置规范》与《备件定额》外，系统内置<strong>女生宿舍隐私保护机制</strong>，排障检修前自动向在宿人员精准推送隐私提醒并由值班人员协同联防。
           </p>
         </div>
       </div>
@@ -323,9 +323,9 @@
     </div>
   </div>
 
-  <!-- ================= 派工弹窗 (Modal) ================= -->
+  <!-- ================= 派工弹窗 (支持宿舍隐私精准短信) ================= -->
   <div id="dispatch-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-    <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
+    <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
       <div class="flex justify-between items-start border-b border-slate-100 pb-3">
         <div>
           <h3 class="text-base font-bold text-slate-800 flex items-center gap-2">
@@ -351,13 +351,30 @@
           </select>
         </div>
 
+        <!-- 女生宿舍隐私保护触发卡片（自动识别宿舍地点） -->
+        <div id="dorm-privacy-card" class="hidden p-3.5 bg-pink-50/70 border border-pink-200 rounded-xl space-y-2">
+          <div class="flex items-center justify-between text-pink-800 font-bold">
+            <span class="flex items-center gap-1.5">
+              <i class="fa-solid fa-user-shield text-pink-600"></i> 女生宿舍隐私保护机制已自动激活
+            </span>
+            <span class="text-[10px] bg-pink-200/70 text-pink-800 px-2 py-0.5 rounded-full font-semibold">定向短信推送</span>
+          </div>
+          <p class="text-[11px] text-pink-700 leading-snug">
+            系统已依据楼栋空间网格，自动挂接【南区7号女宿在册学生 428 人】，确认派工后将自动发送专属关怀隐私通知：
+          </p>
+          <div class="bg-white p-2.5 rounded-lg border border-pink-200/80 text-[11px] text-slate-700 font-sans leading-relaxed shadow-inner">
+            <strong class="text-pink-600">【短信预览】</strong><br>
+            <span id="sms-preview-content"></span>
+          </div>
+        </div>
+
         <div>
           <label class="block font-bold text-slate-700 mb-1.5">附带派工安全警示通知</label>
           <input type="text" id="modal-dispatch-note" value="请携带规定绝缘/防滑工具，并于到达现场后第一时间拉设警戒标志！" class="w-full p-2.5 rounded-lg border border-slate-300 text-xs">
         </div>
       </div>
 
-      <div class="flex justify-end gap-2 pt-2">
+      <div class="flex justify-end gap-2 pt-2 border-t border-slate-100">
         <button onclick="closeDispatchModal()" class="px-4 py-2 rounded-lg text-xs font-medium text-slate-600 hover:bg-slate-100">取消</button>
         <button onclick="confirmDispatch()" class="px-5 py-2 rounded-lg text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white shadow">确认派发短信与企微通知</button>
       </div>
@@ -401,32 +418,46 @@
     }
 
     let workers = [
-      { id: 101, name: "张建国", team: "强电照明组", phone: "138****5021", status: "空闲", busyTask: null },
-      { id: 102, name: "王海山", team: "强电照明组", phone: "139****1124", status: "空闲", busyTask: null },
-      { id: 103, name: "李铁栓", team: "给排水管道组", phone: "137****3389", status: "忙碌", busyTask: "1号楼修水管" },
-      { id: 104, name: "赵保卫", team: "消防安保组", phone: "150****8831", status: "空闲", busyTask: null },
-      { id: 105, name: "刘北峰", team: "冰雪清运组", phone: "158****2209", status: "空闲", busyTask: null },
-      { id: 106, name: "孙师傅", team: "综合物业组", phone: "131****4490", status: "空闲", busyTask: null }
+      { id: 101, name: "张师傅", team: "强电照明组", gender: "男工", phone: "138****5021", status: "空闲", busyTask: null },
+      { id: 102, name: "李师傅", team: "给排水管道组", gender: "男工", phone: "137****3389", status: "空闲", busyTask: null },
+      { id: 103, name: "王师傅", team: "消防安保组", gender: "男工", phone: "150****8831", status: "空闲", busyTask: null },
+      { id: 104, name: "刘师傅", team: "冰雪清运组", gender: "男工", phone: "158****2209", status: "空闲", busyTask: null },
+      { id: 105, name: "赵阿姨", team: "宿管保洁组", gender: "女工", phone: "131****4490", status: "空闲", busyTask: null }
     ];
 
     const INITIAL_ORDERS = [
       {
         id: "ZA-26101",
+        location: "南区7号女宿 308宿舍热水阀门",
+        desc: "水管三角阀生锈爆裂渗水，地面已开始积水，需紧急排障。",
+        grade: "A",
+        category: "给排水管道",
+        team: "给排水管道组",
+        sla: "30分钟内",
+        repairTimeReq: "今天 15:30-16:30",
+        parts: ["DN20不锈钢三角阀", "生料带*2", "管道快修卡箍"],
+        status: "PENDING",
+        assignedWorker: null,
+        timestamp: "2026-11-03 14:35",
+        photoUrl: FALLBACK_SCENE_IMAGES.water
+      },
+      {
+        id: "ZA-26102",
         location: "实训楼 B座 302 实训机房配电箱",
-        desc: "绝缘套管破裂老化，电线铜丝裸露，伴随明显焦糊异味及间歇电弧声。",
+        desc: "绝缘套管破裂老化，伴随明显焦糊异味及间歇电弧声。",
         grade: "S",
         category: "用电安全",
         team: "强电照明组",
         sla: "15分钟内",
         repairTimeReq: "立即紧急处置（越快越好）",
         parts: ["380V低压断路保护开关", "高压阻燃绝缘套管(1米)", "3M绝缘胶带"],
-        status: "PENDING",
-        assignedWorker: null,
+        status: "PROCESSING",
+        assignedWorker: "张师傅",
         timestamp: "2026-11-03 14:20",
         photoUrl: FALLBACK_SCENE_IMAGES.electric
       },
       {
-        id: "ZA-26102",
+        id: "ZA-26103",
         location: "图书馆 正门北侧主台阶",
         desc: "降雪融化后形成大面积暗冰，地表极滑，缺乏安全防滑地毯与警示立牌。",
         grade: "B",
@@ -435,25 +466,10 @@
         sla: "2小时内",
         repairTimeReq: "今天下午 14:00 - 17:30",
         parts: ["环保型融雪盐", "除雪破冰铲", "防滑警戒提示牌*2"],
-        status: "PROCESSING",
-        assignedWorker: "刘北峰",
-        timestamp: "2026-11-03 14:05",
-        photoUrl: FALLBACK_SCENE_IMAGES.ice
-      },
-      {
-        id: "ZA-26103",
-        location: "第二学生宿舍楼 西侧消防通道",
-        desc: "废弃纸箱大量堆叠，将常闭式防火门堵塞超过三分之二。",
-        grade: "A",
-        category: "消防安全",
-        team: "消防安保组",
-        sla: "30分钟内",
-        repairTimeReq: "立即紧急处置（越快越好）",
-        parts: ["现场杂物清运推车", "通道警示标识"],
         status: "RESOLVED",
-        assignedWorker: "赵保卫",
+        assignedWorker: "刘师傅",
         timestamp: "2026-11-03 12:40",
-        photoUrl: FALLBACK_SCENE_IMAGES.fire
+        photoUrl: FALLBACK_SCENE_IMAGES.ice
       }
     ];
 
@@ -553,15 +569,17 @@
     }
 
     function usePresetImage(type) {
-      selectedImageBase64 = FALLBACK_SCENE_IMAGES[type] || FALLBACK_SCENE_IMAGES.electric;
+      selectedImageBase64 = FALLBACK_SCENE_IMAGES[type] || FALLBACK_SCENE_IMAGES.water;
       displaySelectedImage(selectedImageBase64);
-      document.getElementById('hazard-location').value = "实训楼 B座 302 实训机房总配电箱";
-      document.getElementById('hazard-desc').value = "绝缘套管破损，伴随明显焦糊味及间歇电火花声。";
+      document.getElementById('hazard-location').value = "南区7号女宿 308宿舍热水阀门";
+      document.getElementById('hazard-desc').value = "水管三角阀生锈爆裂渗水，地面已开始积水，需紧急排障。";
+      setRepairTime('今天 15:30-16:30');
     }
 
-    function quickFill(loc, desc, type) {
+    function quickFill(loc, desc, type, timeReq) {
       document.getElementById('hazard-location').value = loc;
       document.getElementById('hazard-desc').value = desc;
+      if (timeReq) setRepairTime(timeReq);
       if (type && FALLBACK_SCENE_IMAGES[type]) {
         selectedImageBase64 = FALLBACK_SCENE_IMAGES[type];
         displaySelectedImage(selectedImageBase64);
@@ -579,10 +597,10 @@
     function runAIDiagnosisAndSubmit() {
       const loc = document.getElementById('hazard-location').value.trim();
       const desc = document.getElementById('hazard-desc').value.trim();
-      const repairTime = document.getElementById('hazard-repair-time').value.trim() || "尽快处置";
+      const repairTime = document.getElementById('hazard-repair-time').value.trim() || "今天 15:30-16:30";
 
       if (!loc) {
-        alert("请先填写隐患具体位置（如：实训楼302或宿舍楼西侧）！");
+        alert("请先填写隐患具体位置（如：南区7号女宿308或实训楼302）！");
         return;
       }
 
@@ -618,8 +636,8 @@
             category: "给排水管道",
             team: "给排水管道组",
             sla: "30分钟内",
-            analysis: "水管破裂喷水极易引发室内大面积积水泡水，可能渗水至楼下机房造成二次短路，需先行关闭主供水阀。",
-            parts: ["DN25高压编织软管", "加厚生料带*2", "管道快接活接头"],
+            analysis: "水管破裂喷水极易引发室内大面积积水泡水，若在宿舍楼栋可能渗水至下层，需先行关闭楼层供水角阀。",
+            parts: ["DN20不锈钢三角阀", "加厚生料带*2", "管道快修接头"],
             fallbackImg: FALLBACK_SCENE_IMAGES.water
           };
         } else if (combinedText.includes("冰") || combinedText.includes("雪") || combinedText.includes("滑") || combinedText.includes("冬")) {
@@ -727,6 +745,7 @@
         };
 
         const safeImgUrl = order.photoUrl || FALLBACK_SCENE_IMAGES.electric;
+        const isDormOrder = order.location.includes("女宿") || order.location.includes("宿") || order.location.includes("公寓");
 
         return `
           <div class="p-3.5 rounded-xl border ${order.grade === 'S' && order.status === 'PENDING' ? 'border-red-300 bg-red-50/20' : 'border-slate-200 bg-white'} shadow-sm hover:shadow transition-all flex flex-col md:flex-row gap-3 items-start md:items-center justify-between ${idx === 0 ? 'animate-new-order' : ''}">
@@ -742,6 +761,7 @@
                 <div class="flex items-center gap-2 flex-wrap">
                   <span class="px-2 py-0.5 text-[10px] rounded font-black ${gradeColor}">${order.grade} 级</span>
                   <span class="font-bold text-xs text-slate-800">${order.location}</span>
+                  ${isDormOrder ? '<span class="text-pink-600 bg-pink-50 border border-pink-200 px-1.5 py-0.5 rounded text-[10px] font-semibold"><i class="fa-solid fa-shield-cat"></i> 女宿隐私联防</span>' : ''}
                   ${statusMap[order.status]}
                 </div>
                 <p class="text-xs text-slate-600 line-clamp-2 md:line-clamp-1">${order.desc}</p>
@@ -749,7 +769,7 @@
                   <span><i class="fa-regular fa-clock"></i> 上报: ${order.timestamp}</span>
                   <span class="text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded font-medium"><i class="fa-regular fa-calendar-check"></i> 期望: ${order.repairTimeReq || '尽快'}</span>
                   <span>负责班组: <strong class="text-slate-700">${order.team}</strong></span>
-                  ${order.assignedWorker ? `<span class="text-blue-600 font-semibold"><i class="fa-solid fa-user-check"></i> ${order.assignedWorker} 师傅</span>` : ''}
+                  ${order.assignedWorker ? `<span class="text-blue-600 font-semibold"><i class="fa-solid fa-user-check"></i> ${order.assignedWorker}</span>` : ''}
                 </div>
               </div>
             </div>
@@ -857,7 +877,7 @@
       document.getElementById('modal-order-subtitle').textContent = `工单流水编号: #${order.id}`;
       document.getElementById('modal-loc').textContent = order.location;
       document.getElementById('modal-grade').textContent = `${order.grade} 级 (${order.sla})`;
-      document.getElementById('modal-req-time').textContent = order.repairTimeReq || '尽快处置';
+      document.getElementById('modal-req-time').textContent = order.repairTimeReq || '今天 15:30-16:30';
       document.getElementById('modal-parts').textContent = order.parts.join('、');
 
       const select = document.getElementById('modal-worker-select');
@@ -865,6 +885,21 @@
         const isMatched = w.team === order.team;
         return `<option value="${w.name}">${w.name} - ${w.team} [${w.status}] ${isMatched ? '★推荐对口' : ''}</option>`;
       }).join('');
+
+      // 宿舍隐私保护智能判定
+      const dormCard = document.getElementById('dorm-privacy-card');
+      const isDorm = order.location.includes("女宿") || order.location.includes("宿") || order.location.includes("公寓");
+      if (isDorm) {
+        dormCard.classList.remove('hidden');
+        const dormBuilding = order.location.split(' ')[0] || "南区7号女宿";
+        const targetTime = order.repairTimeReq || "今天 15:30-16:30";
+        document.getElementById('sms-preview-content').innerHTML = `
+          【智安北疆·后勤关怀】<br>
+          同学你好，你所在的【${dormBuilding}】预计将于【${targetTime}】排障检修。请各位同学留意个人着装与室内隐私，随手拉好床帘或门帘。如有异样请找楼下值班人员。
+        `;
+      } else {
+        dormCard.classList.add('hidden');
+      }
 
       document.getElementById('dispatch-modal').classList.remove('hidden');
     }
@@ -893,7 +928,13 @@
           syncChannel.postMessage({ type: 'UPDATE_STATUS', orderId: order.id, status: 'PROCESSING', assignedWorker: selectedWorker });
         }
 
-        alert(`已成功向 [${selectedWorker}] 师傅下发实时短信及企业微信通知！\\n期望上门时段: ${order.repairTimeReq || '尽快'}\\n附带备件: ${order.parts.join('、')}`);
+        const isDorm = order.location.includes("女宿") || order.location.includes("宿") || order.location.includes("公寓");
+        if (isDorm) {
+          alert(`【工单派工成功】\\n已指派 [${selectedWorker}] 师傅出工！\\n\\n【宿舍隐私关怀短信已自动群发】\\n已向该宿舍楼在册同学定向发送提醒：\\n“同学你好，你所在的【${order.location.split(' ')[0]}】预计将于【${order.repairTimeReq || '今天 15:30-16:30'}】排障检修。请各位同学留意个人着装与室内隐私，随手拉好床帘或门帘。如有异样请找楼下值班人员。”`);
+        } else {
+          alert(`已成功向 [${selectedWorker}] 师傅下发实时短信及企微通知！\\n期望上门时段: ${order.repairTimeReq || '尽快'}\\n附带备件: ${order.parts.join('、')}`);
+        }
+
         closeDispatchModal();
         renderAll();
       }
@@ -928,6 +969,7 @@
         id: workers.length + 101,
         name: name,
         team: team || "综合物业组",
+        gender: "男工",
         phone: "186****" + Math.floor(1000 + Math.random() * 9000),
         status: "空闲",
         busyTask: null
