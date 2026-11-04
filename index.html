@@ -4,10 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>智安筑卫 - 校园安全隐患智能质检与调度系统</title>
-  <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- FontAwesome 图标库 -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
     tailwind.config = {
       theme: {
@@ -45,7 +44,6 @@
 </head>
 <body class="bg-slate-100 text-slate-800 font-sans antialiased min-h-screen flex flex-col relative">
 
-  <!-- ================= 顶部全局控制导航条 ================= -->
   <header id="global-header" class="bg-slate-900 text-white shadow-md z-40 sticky top-0">
     <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
       <div class="flex items-center space-x-3">
@@ -60,8 +58,10 @@
         </div>
       </div>
 
-      <!-- 视图切换与智能体联动按钮 -->
       <div class="flex items-center gap-2">
+        <span id="cloud-status-badge" class="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-800 text-emerald-400 text-xs font-mono border border-slate-700">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> 云端大屏直连就绪
+        </span>
         <button onclick="toggleAIChat()" class="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-xs font-semibold shadow-sm transition-all">
           <i class="fa-solid fa-robot"></i> 召唤智能体
         </button>
@@ -77,7 +77,6 @@
     </div>
   </header>
 
-  <!-- ================= 视图 1：师生随手拍移动端 (Mobile View) ================= -->
   <main id="mobile-view" class="flex-1 max-w-md w-full mx-auto p-4 transition-all duration-300 pb-20">
     <div class="bg-gradient-to-r from-blue-600 to-indigo-700 rounded-2xl p-5 text-white shadow-lg mb-4">
       <div class="flex items-center justify-between mb-2">
@@ -90,7 +89,6 @@
       <p class="text-xs text-blue-100 mt-1 opacity-90">现场拍照并提交，AI 将实时诊断定级并派发后勤维保工单</p>
     </div>
 
-    <!-- 随手拍表单 -->
     <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200/80 mb-4 space-y-4">
       <div>
         <label class="block text-xs font-bold text-slate-700 mb-2 flex justify-between">
@@ -114,7 +112,6 @@
         </div>
       </div>
 
-      <!-- 位置 -->
       <div>
         <label class="block text-xs font-bold text-slate-700 mb-1.5">隐患具体位置 <span class="text-red-500">*</span></label>
         <div class="relative">
@@ -123,7 +120,6 @@
         </div>
       </div>
 
-      <!-- 期望维修时间 / 预约上门时段 -->
       <div>
         <label class="block text-xs font-bold text-slate-700 mb-1.5 flex justify-between">
           <span>期望维修时间 / 预约时段</span>
@@ -141,26 +137,22 @@
         </div>
       </div>
 
-      <!-- 表象描述 -->
       <div>
         <label class="block text-xs font-bold text-slate-700 mb-1.5">现场表象描述（选填）</label>
         <textarea id="hazard-desc" rows="2" placeholder="电线破损有焦味、管道滋滋漏水、暗冰易滑倒等现象..." class="w-full text-xs p-2.5 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"></textarea>
       </div>
 
-      <!-- 快捷标签推荐 -->
       <div class="flex flex-wrap gap-1.5">
         <button type="button" onclick="quickFill('学生宿舍7号楼 308寝室', '卫生间进水软管破裂漏水，需要更换', 'water', '今天 15:30-16:30')" class="text-[11px] bg-pink-50 hover:bg-pink-100 text-pink-700 px-2.5 py-1 rounded-full border border-pink-200 transition-colors">🏠 宿舍水管漏水(隐私联动)</button>
         <button type="button" onclick="quickFill('实训楼机房 302', '配电箱绝缘套管破损，伴随轻微打火异味', 'electric', '立即紧急处置（越快越好）')" class="text-[11px] bg-slate-100 hover:bg-blue-50 hover:text-blue-600 text-slate-600 px-2.5 py-1 rounded-full border border-slate-200 transition-colors">⚡ 机房配电打火</button>
         <button type="button" onclick="quickFill('图书馆大门正北台阶', '化雪融水形成大面积暗冰，极易滑倒', 'ice', '今天下午 14:00 - 17:30')" class="text-[11px] bg-slate-100 hover:bg-blue-50 hover:text-blue-600 text-slate-600 px-2.5 py-1 rounded-full border border-slate-200 transition-colors">❄️ 台阶道路暗冰</button>
       </div>
 
-      <!-- 提交报修按钮 -->
       <button id="btn-submit-hazard" onclick="runAIDiagnosisAndSubmit()" class="w-full bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-semibold py-3 rounded-xl shadow-md transition-all flex items-center justify-center gap-2 text-sm">
         <i class="fa-solid fa-wand-magic-sparkles"></i> 启动 AI 质检研判并提交
       </button>
     </div>
 
-    <!-- AI 研判结果动效卡片 -->
     <div id="ai-result-panel" class="hidden bg-white rounded-2xl p-5 shadow-lg border border-blue-200 mb-4 transition-all">
       <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-3">
         <div class="flex items-center gap-2">
@@ -169,7 +161,7 @@
           </div>
           <div>
             <h3 class="text-xs font-bold text-slate-800">多模态 AI 智能体研判报告</h3>
-            <span class="text-[10px] text-emerald-600 font-medium">已实时分发至后勤指挥大屏（待后台派工确认）</span>
+            <span class="text-[10px] text-emerald-600 font-medium">已实时推送到 Supabase 云端与指挥大屏</span>
           </div>
         </div>
         <span id="result-grade-badge" class="px-2.5 py-0.5 rounded-full text-xs font-extrabold shadow-sm">-- 级</span>
@@ -195,7 +187,6 @@
       </div>
     </div>
 
-    <!-- 师生端已报修历史列表 -->
     <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200/80">
       <div class="flex items-center justify-between mb-3">
         <h3 class="text-xs font-bold text-slate-800 flex items-center gap-1.5">
@@ -207,7 +198,6 @@
     </div>
   </main>
 
-  <!-- ================= 视图 2：后勤指挥调度大屏 (Admin Dashboard) ================= -->
   <main id="admin-view" class="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6 space-y-6 hidden transition-all duration-300 pb-20">
     <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
       <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
@@ -216,7 +206,7 @@
           <i class="fa-solid fa-clipboard-list text-blue-500"></i>
         </div>
         <div class="text-2xl font-black text-slate-800" id="stat-total">0</div>
-        <div class="text-[11px] text-emerald-600 mt-1"><i class="fa-solid fa-arrow-trend-up"></i> 师生扫码接入率 99.2%</div>
+        <div class="text-[11px] text-emerald-600 mt-1"><i class="fa-solid fa-cloud-arrow-down"></i> Supabase 云端实时同步</div>
       </div>
 
       <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
@@ -247,7 +237,6 @@
       </div>
     </div>
 
-    <!-- 中部主工作区 -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
       <div class="lg:col-span-2 bg-white rounded-xl shadow-sm border border-slate-200 p-5 flex flex-col">
         <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-4 border-b border-slate-100 gap-3">
@@ -255,7 +244,7 @@
             <h2 class="text-base font-bold text-slate-800 flex items-center gap-2">
               <i class="fa-solid fa-tower-broadcast text-blue-600"></i> 校园安全隐患现场取证与调度看板
             </h2>
-            <p class="text-xs text-slate-400 mt-0.5">点击工单照片可放大查看现场取证高清大图</p>
+            <p class="text-xs text-slate-400 mt-0.5">支持超星智能体 API 外部直接写入，工单毫秒级刷新</p>
           </div>
 
           <div class="flex items-center gap-2 flex-wrap">
@@ -303,12 +292,8 @@
     </div>
   </main>
 
-  <!-- ================= 核心：智能体悬浮球与联动小窗 (包含 iframe 与原生对话双模式) ================= -->
   <div id="ai-chat-widget" class="fixed bottom-5 right-5 z-50 flex flex-col items-end select-none">
-    
-    <!-- 智能体展开的对话小窗 -->
     <div id="ai-chat-box" class="hidden w-[90vw] sm:w-[400px] h-[550px] bg-white rounded-2xl shadow-2xl border border-blue-200 flex flex-col overflow-hidden mb-3 animate-new-order transition-all">
-      <!-- 弹窗顶栏 -->
       <div class="bg-gradient-to-r from-blue-600 to-indigo-700 text-white p-3.5 flex items-center justify-between shadow-sm">
         <div class="flex items-center gap-2.5">
           <div class="w-8 h-8 rounded-full bg-white/20 border border-white/40 flex items-center justify-center text-sm shadow-inner">
@@ -317,14 +302,11 @@
           <div>
             <h4 class="font-bold text-xs tracking-wide">智安筑卫 AI 安全管家</h4>
             <span class="text-[10px] text-emerald-300 flex items-center gap-1">
-              <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span> 超星知识库大模型就绪
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span> 云端大屏双向打通
             </span>
           </div>
         </div>
         <div class="flex items-center gap-1.5">
-          <button onclick="toggleIframeMode()" id="btn-toggle-iframe" title="切换超星网页端 / 原生对话模式" class="text-white/80 hover:text-white text-[11px] bg-white/10 hover:bg-white/20 px-2 py-1 rounded flex items-center gap-1">
-            <i class="fa-solid fa-window-restore"></i> <span id="toggle-iframe-label">超星视图</span>
-          </button>
           <a href="https://robot.chaoxing.com" target="_blank" title="在新标签页全屏打开超星智能体" class="text-white/80 hover:text-white text-xs bg-white/10 hover:bg-white/20 p-1.5 rounded">
             <i class="fa-solid fa-arrow-up-right-from-square"></i>
           </a>
@@ -332,39 +314,24 @@
         </div>
       </div>
 
-      <!-- 模式 A：超星智能体 iframe 嵌入容器 (若有具体分享链接直接在此替换 src) -->
-      <div id="iframe-container" class="hidden flex-1 bg-slate-100 relative">
-        <iframe id="chaoxing-agent-iframe" src="https://robot.chaoxing.com" class="w-full h-full border-0" title="超星智能体"></iframe>
-        <div class="absolute bottom-2 left-2 right-2 p-2 bg-slate-900/80 backdrop-blur-sm rounded-lg text-[10px] text-slate-300 flex justify-between items-center">
-          <span>如遇超星跨域拦截，可点击右上角图标全屏打开</span>
-          <button onclick="toggleIframeMode()" class="text-blue-400 hover:underline">返回对话模式</button>
-        </div>
-      </div>
-      
-      <!-- 模式 B：原生多模态安全管家对话区 -->
       <div id="native-chat-container" class="flex-1 flex flex-col overflow-hidden bg-slate-50">
-        <!-- 消息滚动区 -->
         <div id="chat-messages" class="flex-1 p-3.5 overflow-y-auto space-y-3 text-xs">
           <div class="flex items-start gap-2.5">
-            <div class="w-7 h-7 rounded-full bg-blue-600 text-white flex-shrink-0 flex items-center justify-center text-xs font-bold shadow-sm">
-              卫
-            </div>
+            <div class="w-7 h-7 rounded-full bg-blue-600 text-white flex-shrink-0 flex items-center justify-center text-xs font-bold shadow-sm">卫</div>
             <div class="bg-white p-3 rounded-2xl rounded-tl-none border border-slate-200/80 shadow-xs max-w-[85%] text-slate-700 leading-relaxed">
               同学 / 老师你好！我是学校的「智安筑卫」AI 智能安全管家 🛡️
               <br><br>
-              我已学习《校园安全巡查分级与维保定额规范》，支持<strong>险情秒级避险指导、S/A/B多模态定级、维保备件定额推荐与全校宿舍人本隐私预警</strong>。你可以直接打字向我描述，或点击下方快捷气泡体验：
+              我已经接入后勤 Supabase 云数据库。你可以跟我随时沟通险情，不仅能获得避险指导，聊完后<strong>我可以直接帮你把工单派到指挥大屏上！</strong>
             </div>
           </div>
         </div>
 
-        <!-- 快捷提问气泡 -->
         <div class="px-3 py-1.5 bg-slate-100 border-t border-slate-200/60 flex items-center gap-1.5 overflow-x-auto whitespace-nowrap">
           <button onclick="sendQuickPrompt('宿舍水管突然爆裂漏水怎么办？')" class="text-[10px] bg-white hover:bg-blue-50 text-blue-600 border border-slate-200 px-2 py-1 rounded-full flex-shrink-0 transition-colors">💧 水管爆水应急</button>
           <button onclick="sendQuickPrompt('实训楼配电箱打火冒烟了！')" class="text-[10px] bg-white hover:bg-red-50 text-red-600 border border-slate-200 px-2 py-1 rounded-full flex-shrink-0 transition-colors">⚡ 配电打火避险</button>
-          <button onclick="sendQuickPrompt('宿舍限电是多少？可以用大功率电器吗？')" class="text-[10px] bg-white hover:bg-slate-50 text-slate-600 border border-slate-200 px-2 py-1 rounded-full flex-shrink-0 transition-colors">🔌 宿舍用电规定</button>
+          <button onclick="sendQuickPrompt('帮我报修7号楼308的水管漏水')" class="text-[10px] bg-white hover:bg-pink-50 text-pink-600 border border-slate-200 px-2 py-1 rounded-full flex-shrink-0 transition-colors">🚀 演示直接派工</button>
         </div>
 
-        <!-- 输入底栏 -->
         <div class="p-2.5 bg-white border-t border-slate-200 flex items-center gap-2">
           <input type="text" id="chat-input" placeholder="输入你想咨询的安全问题或隐患位置..." class="flex-1 text-xs px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white" onkeydown="if(event.key==='Enter') sendChatMessage()">
           <button onclick="sendChatMessage()" class="w-8 h-8 rounded-xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white flex items-center justify-center text-xs shadow-sm flex-shrink-0 transition-all">
@@ -374,7 +341,6 @@
       </div>
     </div>
 
-    <!-- 悬浮球本体 -->
     <div class="flex items-center gap-2">
       <div class="bg-slate-900/85 backdrop-blur-sm text-white text-[11px] py-1.5 px-3 rounded-full shadow-md hidden sm:block border border-slate-700 pointer-events-none">
         💬 发现隐患？问问智安管家
@@ -385,7 +351,6 @@
     </div>
   </div>
 
-  <!-- ================= 图片大图预览查看模态框 ================= -->
   <div id="image-modal" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden" onclick="closeImageModal()">
     <div class="max-w-3xl w-full bg-slate-900 rounded-2xl overflow-hidden shadow-2xl relative" onclick="event.stopPropagation()">
       <div class="p-3 border-b border-slate-800 flex items-center justify-between text-white text-xs">
@@ -404,7 +369,6 @@
     </div>
   </div>
 
-  <!-- ================= 派工弹窗 (支持自由切换分类与自由勾选号码) ================= -->
   <div id="dispatch-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
     <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
       <div class="flex justify-between items-start border-b border-slate-100 pb-3">
@@ -430,7 +394,6 @@
           <select id="modal-worker-select" class="w-full p-2.5 rounded-lg border border-slate-300 text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none"></select>
         </div>
 
-        <!-- 宿舍人本关怀卡片 -->
         <div id="dorm-privacy-card" class="p-3.5 bg-pink-50/70 border border-pink-200 rounded-xl space-y-2.5">
           <div class="flex items-center justify-between text-pink-800 font-bold">
             <span class="flex items-center gap-1.5">
@@ -484,7 +447,6 @@
     </div>
   </div>
 
-  <!-- ================= 手机号分类导入管理弹窗 ================= -->
   <div id="phone-manager-modal" class="fixed inset-0 bg-slate-900/75 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
     <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4 max-h-[92vh] overflow-y-auto">
       <div class="flex justify-between items-start border-b border-slate-100 pb-3">
@@ -551,8 +513,19 @@
     </div>
   </div>
 
-  <!-- ================= 底层数据及交互引擎脚本 ================= -->
   <script>
+    const SUPABASE_URL = "https://ygvhitcwprtmkmwjmyrz.supabase.co";
+    const SUPABASE_KEY = "sb_publishable_nX15vjpgbnggvF7Ad5d7lA_ztLkvFwB";
+    let supabaseClient = null;
+
+    try {
+      if (window.supabase) {
+        supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+      }
+    } catch(err) {
+      console.warn("Supabase 客户端初始化提示:", err);
+    }
+
     const FALLBACK_SCENE_IMAGES = {
       electric: "https://images.unsplash.com/photo-1544724569-5f546fd6f2b5?auto=format&fit=crop&w=800&q=80",
       water: "https://images.unsplash.com/photo-1585704032915-c3400ca199e7?auto=format&fit=crop&w=800&q=80",
@@ -566,7 +539,6 @@
     let selectedImageBase64 = null;
     let activeDormBuilding = "学生宿舍7号楼";
 
-    // 楼栋通讯录数据库
     let buildingPhoneBook = {
       "学生宿舍7号楼": ["13800138000", "13912345678", "18600001111"],
       "学生宿舍8号楼": ["13711112222", "15033334444"],
@@ -584,26 +556,6 @@
         localStorage.setItem('CAMPUS_BUILDING_PHONES_V3', JSON.stringify(buildingPhoneBook));
       } catch(e) {}
     }
-
-    let syncChannel = null;
-    try {
-      syncChannel = new BroadcastChannel('campus_safety_channel');
-      syncChannel.onmessage = (event) => {
-        if (event.data && event.data.type === 'NEW_ORDER') {
-          orders.unshift(event.data.order);
-          saveOrdersToStorage();
-          renderAll();
-        } else if (event.data && event.data.type === 'UPDATE_STATUS') {
-          const target = orders.find(o => o.id === event.data.orderId);
-          if (target) {
-            target.status = event.data.status;
-            target.assignedWorker = event.data.assignedWorker || target.assignedWorker;
-            saveOrdersToStorage();
-            renderAll();
-          }
-        }
-      };
-    } catch (e) {}
 
     let workers = [
       { id: 101, name: "张师傅", team: "强电照明组", gender: "男工", phone: "138****5021", status: "空闲", busyTask: null },
@@ -680,6 +632,95 @@
       } catch (e) {}
     }
 
+    async function syncOrdersFromSupabase() {
+      if (!supabaseClient) return;
+      try {
+        const { data, error } = await supabaseClient
+          .from('orders')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (data && data.length > 0) {
+          const cloudOrders = data.map(item => ({
+            id: item.id,
+            location: item.location,
+            desc: item.description || "无详细描述",
+            grade: item.grade || "B",
+            category: item.category || "常规隐患",
+            team: item.team || "综合物业组",
+            sla: item.sla || "2小时内",
+            repairTimeReq: item.repair_time_req || "尽快",
+            parts: Array.isArray(item.parts) ? item.parts : (typeof item.parts === 'string' ? JSON.parse(item.parts) : ["标准维保工具组"]),
+            status: item.status || "PENDING",
+            assignedWorker: item.assigned_worker || null,
+            timestamp: new Date(item.created_at).toLocaleString(),
+            photoUrl: item.photo_url || FALLBACK_SCENE_IMAGES.water
+          }));
+
+          const map = new Map();
+          [...cloudOrders, ...orders].forEach(o => map.set(o.id, o));
+          orders = Array.from(map.values());
+          saveOrdersToStorage();
+          renderAll();
+        }
+      } catch (err) {
+        console.warn("从 Supabase 同步已有工单出现轻微波动:", err);
+      }
+    }
+
+    function subscribeSupabaseRealtime() {
+      if (!supabaseClient) return;
+      supabaseClient
+        .channel('public:orders')
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'orders' }, payload => {
+          const row = payload.new;
+          const newOrder = {
+            id: row.id,
+            location: row.location,
+            desc: row.description,
+            grade: row.grade,
+            category: row.category,
+            team: row.team,
+            sla: row.sla,
+            repairTimeReq: row.repair_time_req,
+            parts: Array.isArray(row.parts) ? row.parts : (typeof row.parts === 'string' ? JSON.parse(row.parts) : ["标准维保工具"]),
+            status: row.status,
+            assignedWorker: row.assigned_worker,
+            timestamp: new Date(row.created_at).toLocaleString(),
+            photoUrl: row.photo_url || FALLBACK_SCENE_IMAGES.water
+          };
+
+          orders.unshift(newOrder);
+          saveOrdersToStorage();
+          renderAll();
+
+          alert(`🚨【后勤指挥大屏收到新工单！】\n来源：超星智能体云端直接推送\n流水号：#${newOrder.id}\n位置：${newOrder.location}\n定级：${newOrder.grade} 级（${newOrder.sla}）`);
+        })
+        .subscribe();
+    }
+
+    async function pushOrderToCloud(orderObj) {
+      if (!supabaseClient) return;
+      try {
+        await supabaseClient.from('orders').insert([{
+          id: orderObj.id,
+          location: orderObj.location,
+          description: orderObj.desc,
+          grade: orderObj.grade,
+          category: orderObj.category,
+          team: orderObj.team,
+          sla: orderObj.sla,
+          repair_time_req: orderObj.repairTimeReq,
+          parts: orderObj.parts,
+          status: orderObj.status,
+          assigned_worker: orderObj.assignedWorker,
+          photo_url: orderObj.photoUrl
+        }]);
+      } catch(err) {
+        console.warn("推送工单至云端失败:", err);
+      }
+    }
+
     window.addEventListener('DOMContentLoaded', () => {
       const urlParams = new URLSearchParams(window.location.search);
       const viewParam = urlParams.get('view');
@@ -702,6 +743,8 @@
       }
 
       renderAll();
+      syncOrdersFromSupabase();
+      subscribeSupabaseRealtime();
     });
 
     function setRepairTime(val) {
@@ -729,7 +772,6 @@
       }
     }
 
-    // ================= 智能体悬浮球与双模式交互 =================
     function toggleAIChat() {
       const box = document.getElementById('ai-chat-box');
       box.classList.toggle('hidden');
@@ -738,22 +780,6 @@
           const input = document.getElementById('chat-input');
           if (input) input.focus();
         }, 150);
-      }
-    }
-
-    function toggleIframeMode() {
-      const iframeBox = document.getElementById('iframe-container');
-      const nativeBox = document.getElementById('native-chat-container');
-      const label = document.getElementById('toggle-iframe-label');
-
-      if (iframeBox.classList.contains('hidden')) {
-        iframeBox.classList.remove('hidden');
-        nativeBox.classList.add('hidden');
-        label.textContent = "原生对话";
-      } else {
-        iframeBox.classList.add('hidden');
-        nativeBox.classList.remove('hidden');
-        label.textContent = "超星视图";
       }
     }
 
@@ -793,7 +819,7 @@
       typingDiv.innerHTML = `
         <div class="w-7 h-7 rounded-full bg-blue-600 text-white flex-shrink-0 flex items-center justify-center text-xs font-bold shadow-sm">卫</div>
         <div class="bg-white p-2.5 rounded-2xl rounded-tl-none border border-slate-200 text-slate-400 text-xs flex items-center gap-1.5">
-          <i class="fa-solid fa-spinner fa-spin text-blue-600"></i> AI正在研判规范...
+          <i class="fa-solid fa-spinner fa-spin text-blue-600"></i> AI正在研判规范并连接云端...
         </div>
       `;
       document.getElementById('chat-messages').appendChild(typingDiv);
@@ -806,36 +832,50 @@
         let reply = "";
         const q = query.toLowerCase();
 
-        if (q.includes("水") || q.includes("漏") || q.includes("爆")) {
+        if (q.includes("报修") || q.includes("直派") || (q.includes("漏水") && q.includes("7号楼"))) {
+          const directOrder = {
+            id: `ZA-${Math.floor(10000 + Math.random() * 90000)}`,
+            location: "学生宿舍7号楼 308寝室水管",
+            desc: "由智能体对话触发报修：水阀严重喷水，已通知同学关闭电源开关并注意防滑。",
+            grade: "A",
+            category: "给排水管道",
+            team: "给排水管道组",
+            sla: "30分钟内",
+            repairTimeReq: "立即紧急排障",
+            parts: ["DN20不锈钢三角阀", "生料带*2", "管道快修卡箍"],
+            status: "PENDING",
+            assignedWorker: null,
+            timestamp: new Date().toISOString().slice(0, 16).replace('T', ' '),
+            photoUrl: FALLBACK_SCENE_IMAGES.water
+          };
+
+          orders.unshift(directOrder);
+          saveOrdersToStorage();
+          pushOrderToCloud(directOrder);
+          renderAll();
+
+          reply = `✅ <strong>已为你成功生成工单并直接同步至云端大屏！</strong><br>
+          - 工单单号：<code>#${directOrder.id}</code><br>
+          - 响应等级：<strong>A级紧急</strong>（安排给排水组李师傅，30分钟内到场）<br>
+          - 宿舍隐私：已激活在宿短信预警，请宿舍同学留意隐私保护！`;
+        } else if (q.includes("水") || q.includes("漏") || q.includes("爆")) {
           reply = `<strong>同学先别慌！听我说，第一步：</strong><br>
-          千万注意防滑！如果积水蔓延到地面的接线板或插座附近，<strong>切勿用湿手触碰，先切断房间电源总开关！</strong><br><br>
-          🛡️ <strong>AI 研判建议：</strong><br>
-          - 风险定级：<strong>A级紧急险情</strong>（水压喷涌存在下层渗漏风险）<br>
-          - 建议派工：<strong>给排水管道组·李师傅</strong><br>
-          - 备件带料：DN20不锈钢三角阀、加厚生料带、管道快修卡箍<br>
-          - 宿舍关怀：已激活在宿隐私联动机制，上门前将发短信提醒大家拉好床帘。<br><br>
-          你也可以直接在网页<strong>【师生随手拍】</strong>中上传照片，工单会秒级同步后勤大屏！`;
+          千万注意防滑！如果积水蔓延到地面的插排或充电器附近，<strong>切勿用湿手触碰，先切断房间电源总开关！</strong><br><br>
+          你可以直接跟我说：<code>“帮我报修7号楼308的水管漏水”</code>，我将直接通过云端帮你在大屏上下发工单！`;
         } else if (q.includes("电") || q.includes("火") || q.includes("冒烟") || q.includes("焦")) {
           reply = `🔥 <strong>特急避险警报！</strong><br>
           请立刻远离打火区域，<strong>千万不要直接用手触碰开关或线缆！</strong>若在实训室，请立刻按下墙面红色【紧急断电急停按钮】或通知老师。<br><br>
-          🛡️ <strong>AI 研判建议：</strong><br>
-          - 风险定级：<strong>S级特急高危</strong>（15分钟强响应）<br>
-          - 建议派工：<strong>强电照明组·张师傅</strong><br>
-          - 备件带料：380V断路保护器、阻燃热缩套管、绝缘测电笔<br>
-          后勤应急指挥大屏已亮起红灯，请在安全距离等待排障！`;
+          如需报修，请告诉我具体楼栋教室，我会秒级下发 S 级特急工单！`;
         } else if (q.includes("限电") || q.includes("功率") || q.includes("锅")) {
-          reply = `根据学校学生宿舍安全用电规程：<br>
-          宿舍单间用电保护功率通常为 <strong>800W~1000W</strong>。严禁使用热得快、电煮锅、电热毯等阻性高热违章电器哦，否则智能控电模块会立即自动断电保护。安全第一，可别让宿舍跳闸啦！`;
+          reply = `学校宿舍单间用电保护功率通常为 <strong>800W~1000W</strong>。严禁使用热得快、电煮锅、电热毯等阻性高热违章电器哦，否则智能控电模块会立即自动断电保护。安全第一！`;
         } else {
-          reply = `我已经收到你的反馈：“${query}”。<br><br>
-          智安筑卫已接入学校《校园安全隐患巡查与分级处置规范》。如果你手头有现场照片，欢迎在随手拍模块中上传取证，系统将为你毫秒级生成 S/A/B 定级与师傅出工清单！`;
+          reply = `收到你的咨询：“${query}”。智安筑卫云端数据链路已打通，你可以直接在随手拍上传照片，或者直接在对话里报出位置让我帮你派发工单！`;
         }
 
         appendChatMessage('Agent', reply, false);
       }, 700);
     }
 
-    // ================= 随手拍与工单处理逻辑 =================
     function handleFileSelect(event) {
       const file = event.target.files[0];
       if (file) {
@@ -964,11 +1004,8 @@
 
         orders.unshift(newOrder);
         saveOrdersToStorage();
+        pushOrderToCloud(newOrder);
         renderAll();
-
-        if (syncChannel) {
-          syncChannel.postMessage({ type: 'NEW_ORDER', order: newOrder });
-        }
 
         submitBtn.disabled = false;
         submitBtn.innerHTML = `<i class="fa-solid fa-check"></i> 研判完成已同步大屏，继续提交`;
@@ -1297,8 +1334,14 @@
         }
 
         saveOrdersToStorage();
-        if (syncChannel) {
-          syncChannel.postMessage({ type: 'UPDATE_STATUS', orderId: order.id, status: 'PROCESSING', assignedWorker: selectedWorker });
+
+        if (supabaseClient) {
+          try {
+            await supabaseClient.from('orders').update({
+              status: 'PROCESSING',
+              assigned_worker: selectedWorker
+            }).eq('id', order.id);
+          } catch(e) {}
         }
 
         if (recipients.length > 0) {
@@ -1312,7 +1355,7 @@
       }
     }
 
-    function markResolved(orderId) {
+    async function markResolved(orderId) {
       const order = orders.find(o => o.id === orderId);
       if (order) {
         order.status = 'RESOLVED';
@@ -1324,9 +1367,15 @@
           }
         }
         saveOrdersToStorage();
-        if (syncChannel) {
-          syncChannel.postMessage({ type: 'UPDATE_STATUS', orderId: order.id, status: 'RESOLVED' });
+
+        if (supabaseClient) {
+          try {
+            await supabaseClient.from('orders').update({
+              status: 'RESOLVED'
+            }).eq('id', order.id);
+          } catch(e) {}
         }
+
         renderAll();
       }
     }
