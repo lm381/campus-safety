@@ -773,15 +773,13 @@
     }
 
     function toggleAIChat() {
-      const box = document.getElementById('ai-chat-box');
-      box.classList.toggle('hidden');
-      if (!box.classList.contains('hidden')) {
-        setTimeout(() => {
-          const input = document.getElementById('chat-input');
-          if (input) input.focus();
-        }, 150);
-      }
-    }
+  const url = "https://robot.chaoxing.com/coze?unitId=333390&robotId=56025220138a4879924b044b35cc7224";
+  const w = 460;
+  const h = 760;
+  const left = window.screen.width - w - 30;
+  const top = Math.floor((window.screen.height - h) / 2);
+  window.open(url, "ChaoxingRobot", `width=${w},height=${h},top=${top},left=${left},scrollbars=yes,resizable=yes`);
+}
 
     function sendQuickPrompt(text) {
       document.getElementById('chat-input').value = text;
@@ -1510,46 +1508,5 @@
       if (activeDispatchOrderId) onDispatchGroupChange(activeDormBuilding);
     }
   </script>
-  ... 这里是你原来长长的所有代码，一行都不要删 ...
-
-  <!-- ================= 追加：超星安全管家悬浮球 ================= -->
-  <style>
-    .cx-robot-float-btn {
-      position: fixed;
-      bottom: 28px;
-      right: 28px;
-      width: 58px;
-      height: 58px;
-      border-radius: 50%;
-      background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
-      box-shadow: 0 4px 18px rgba(2, 132, 199, 0.45);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      z-index: 99999;
-      font-size: 28px;
-      transition: transform 0.2s ease;
-    }
-    .cx-robot-float-btn:hover {
-      transform: scale(1.1);
-    }
-  </style>
-
-  <div class="cx-robot-float-btn" onclick="openChaoxingRobot()" title="打开校园安全管家">
-    🤖
-  </div>
-
-  <script>
-    function openChaoxingRobot() {
-      const url = "https://robot.chaoxing.com/coze?unitId=333390&robotId=56025220138a4879924b044b35cc7224";
-      const w = 460, h = 760;
-      const left = window.screen.width - w - 30;
-      const top = Math.floor((window.screen.height - h) / 2);
-      window.open(url, "ChaoxingRobot", `width=${w},height=${h},top=${top},left=${left},scrollbars=yes,resizable=yes`);
-    }
-  </script>
-  <!-- ========================================================== -->
-
 </body>
 </html>
