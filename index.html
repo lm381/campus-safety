@@ -739,7 +739,7 @@
         switchView('admin');
       } else {
         const isMobileDevice = window.innerWidth < 850 || /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-        switchView(isMobileDevice ? 'mobile' : 'admin');
+       switchView('mobile');
       }
 
       renderAll();
